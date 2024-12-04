@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>SERON - ログイン</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-home">
+        <div class="navbar-brand">
+            <a href="/" class="navbar-title">SERON - TOP</a>
+        </div>
+    </nav>
+
+    <div class="login-container">
+        <h2>ログイン</h2>
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label for="username">ユーザー名</label>
+                <input type="text" id="username" name="username" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="password">パスワード</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+            <button type="submit">ログイン</button>
+        </form>
+        <div class="login-link">
+            <p>アカウントをお持ちでない方は <a href="/register">登録</a> してください。</p>
+        </div>
+        <div class="error-message" id="login-error">
+            <!-- エラーメッセージをここに表示 -->
+        </div>
+    </div>
+</body>
+</html>

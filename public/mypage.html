@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>SERON - マイページ</title>
+    <link rel="stylesheet" href="/css/styles.css"> <!-- 外部CSSファイルへのパスを修正 -->
+</head>
+<body>
+    <nav class="navbar navbar-mypage">
+        <div class="navbar-brand">
+            <a href="/" class="navbar-title">SERON - マイページ</a>
+        </div>
+        <div>
+            <button onclick="logout()" class="btn-sm btn-logout">ログアウト</button>
+        </div>
+    </nav>
+
+    <div class="mypage-section">
+        <div class="image-container">
+            <img src="path/to/your/image.jpg" alt="プロフィール画像" class="mypage-image">
+        </div>
+        <div class="content-container">
+            <h3>ようこそ、<span id="username">ユーザー名</span>さん</h3>
+            <p>ここからスタンスの投稿やイシューの作成ができます</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>スタンス投稿</h3>
+        <div class="stance-post-form">
+            <form id="post-stance-form" class="form">
+                <div class="form-group">
+                    <label for="issue">イシュー:</label>
+                    <select id="issue" name="issue" class="form-control" required>
+                        <option value="">選択してください</option>
+                        <!-- イシューがJavaScriptで動的に挿入されます -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="stance">スタンス:</label>
+                    <select id="stance" name="stance" class="form-control" required>
+                        <option value="YES">YES</option>
+                        <option value="NO">NO</option>
+                        <option value="様子見">様子見</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="comment">コメント (50文字以内):</label>
+                    <textarea id="comment" name="comment" class="form-control" rows="3" maxlength="50" placeholder="コメントを入力"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-submit-stance">投稿</button>
+            </form>
+            <div class="error-message" id="stance-error"></div>
+            <div class="success-message" id="stance-success"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>イシューの作成</h3>
+        <div class="create-issue-form">
+            <form id="create-issue-form" class="create-issue-form">
+                <div class="form-group">
+                    <label for="headline">ヘッドライン:</label>
+                    <input type="text" id="headline" name="headline" class="form-control" required placeholder="ヘッドラインを入力">
+                </div>
+                <div class="form-group">
+                    <label for="description">概要:</label>
+                    <textarea id="description" name="description" class="form-control" rows="4" required placeholder="概要を入力"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="tag">カテゴリ:</label>
+                    <select id="tag" name="tag" class="form-control" required>
+                        <option value="">選択してください</option>
+                        <!-- プリセットタグがJavaScriptで動的に挿入されます -->
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-create-issue">作成</button>
+            </form>
+            <div class="error-message" id="issue-error"></div>
+            <div class="success-message" id="issue-success"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>自分が作成したイシュー</h3>
+        <div id="featured-issues"></div>
+    </div>
+
+    <div class="section">
+        <h3>他のイシュー</h3>
+        <div id="existingIssues"></div>
+    </div>
+
+    <script src="/js/scripts-mypage.js" defer></script> <!-- スクリプトのパスを修正 -->
+</body>
+</html>

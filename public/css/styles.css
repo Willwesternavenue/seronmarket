@@ -1,0 +1,644 @@
+/* -----------------------------------
+   CSS Variables for Consistency
+----------------------------------- */
+:root {
+    /* Colors */
+    --color-primary: #007bff;
+    --color-primary-dark: #0056b3;
+    --color-danger: #dc3545;
+    --color-danger-dark: #c82333;
+    --color-background: #f4f4f4;
+    --color-white: #ffffff;
+    --color-dark-blue: #004085;
+    --color-light-gray: #f8f9fa;
+    --color-border: #ddd;
+    --color-shadow: rgba(0, 0, 0, 0.1);
+    --color-text: #555;
+    --color-text-dark: #333;
+    --color-gold: #f0ad4e;
+    --color-star: #ffcc00;
+
+    /* Fonts */
+    --font-family: Arial, sans-serif;
+
+    /* Others */
+    --border-radius: 8px;
+    --transition-speed: 0.3s;
+}
+
+/* -----------------------------------
+   Global Styles
+----------------------------------- */
+body {
+    font-family: var(--font-family);
+    background-color: var(--color-background);
+    padding: 20px;
+    margin: 0;
+    line-height: 1.6;
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color var(--transition-speed);
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* -----------------------------------
+   Navigation Bar Styles
+----------------------------------- */
+.navbar {
+    padding: 15px;
+    border-radius: var(--border-radius);
+    color: var(--color-white);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px var(--color-shadow);
+}
+
+.navbar a {
+    color: var(--color-white);
+    margin-left: 15px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    transition: color var(--transition-speed);
+}
+
+.navbar a:hover {
+    color: var(--color-primary-dark);
+}
+
+/* Specific Navbar Backgrounds */
+.navbar-home,
+.navbar-mypage,
+.navbar-register {
+    background-color: var(--color-primary);
+}
+
+.navbar-admin {
+    background-color: #6128a7; /* Admin用紫色 */
+}
+
+/* Ensure Navbar Links Maintain White Color */
+.navbar-home a,
+.navbar-mypage a,
+.navbar-register a,
+.navbar-admin a {
+    color: var(--color-white);
+}
+
+/* -----------------------------------
+   Hero Section Styles
+----------------------------------- */
+.hero-section {
+    text-align: center;
+    padding: 40px 20px;
+    background-color: var(--color-light-gray);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px var(--color-shadow);
+    margin-bottom: 20px;
+}
+
+.hero-section h3 {
+    color: var(--color-dark-blue);
+    margin-bottom: 10px;
+    font-size: 24px;
+}
+
+.hero-section p {
+    color: var(--color-text);
+    font-size: 18px;
+}
+
+/* -----------------------------------
+   Section Styles
+----------------------------------- */
+.section {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: var(--color-white);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px var(--color-shadow);
+}
+
+.section h3 {
+    margin-bottom: 15px;
+    color: var(--color-dark-blue);
+    font-size: 20px;
+}
+
+/* -----------------------------------
+   Card Styles
+----------------------------------- */
+/* Common Card Styles */
+.card,
+.featured-issue-card,
+.other-issue-card {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    box-shadow: 0 2px 4px var(--color-shadow);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: center;
+    transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.card:hover,
+.featured-issue-card:hover,
+.other-issue-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px var(--color-shadow);
+}
+
+/* Featured Issue Card Specific Styles */
+.featured-issue-card {
+    border: 2px solid var(--color-gold);
+    border-radius: 20px;
+    background-color: #fffbec; /* Light background */
+    position: relative;
+    width: calc(33.333% - 30px);
+    max-width: 300px;
+    min-width: 250px;
+}
+
+.featured-issue-card::before {
+    content: '🌟';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    font-size: 24px;
+    color: var(--color-star);
+}
+
+.featured-issue-card h4 {
+    color: var(--color-primary);
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.featured-issue-card p {
+    font-size: 14px;
+    color: var(--color-text);
+    margin-bottom: 8px;
+}
+
+/* Other Issue Card Specific Styles */
+.other-issue-card {
+    flex: 1 1 calc(24% - 30px);
+    max-width: 250px;
+    min-width: 180px;
+    border: 1px solid var(--color-border);
+}
+
+.other-issue-card h4 {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.other-issue-card p {
+    font-size: 12px;
+    color: var(--color-text);
+    margin-bottom: 5px;
+}
+
+/* -----------------------------------
+   Vote Bar Styles
+----------------------------------- */
+.vote-bar-container {
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 10px;
+    height: 20px;
+    display: flex;
+}
+
+.vote-bar {
+    height: 100%;
+}
+
+.vote-bar-yes {
+    background-color: var(--color-primary);
+}
+
+.vote-bar-no {
+    background-color: var(--color-danger);
+}
+
+.vote-counts {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--color-text);
+}
+
+/* -----------------------------------
+   Button Styles
+----------------------------------- */
+.btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--color-white);
+    background-color: var(--color-primary);
+    transition: background-color var(--transition-speed);
+}
+
+.btn:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.btn-danger {
+    background-color: var(--color-danger);
+}
+
+.btn-danger:hover {
+    background-color: var(--color-danger-dark);
+}
+
+.btn-sm {
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+.like-button {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
+    font-size: 14px;
+}
+
+.like-button:hover {
+    background-color: var(--color-primary-dark);
+}
+
+/* -----------------------------------
+   Featured and Existing Issues Layout
+----------------------------------- */
+#featured-issues,
+#existingIssues {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Responsive Featured and Other Issue Cards */
+@media (max-width: 1200px) {
+    .featured-issue-card,
+    .other-issue-card {
+        width: calc(33.333% - 30px);
+    }
+}
+
+@media (max-width: 800px) {
+    .featured-issue-card,
+    .other-issue-card {
+        width: calc(50% - 30px);
+    }
+}
+
+@media (max-width: 500px) {
+    .featured-issue-card,
+    .other-issue-card {
+        width: 100%;
+    }
+}
+
+/* -----------------------------------
+   Mypage Image Styles
+----------------------------------- */
+.mypage-image {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    border-radius: var(--border-radius);
+    object-fit: cover;
+    box-shadow: 0 2px 4px var(--color-shadow);
+    margin: 0 auto;
+    display: block;
+}
+
+.mypage-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: var(--color-white);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px var(--color-shadow);
+    margin-top: 20px;
+}
+
+@media (min-width: 768px) {
+    .mypage-section {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .mypage-section .image-container {
+        flex: 1;
+        margin-right: 20px;
+    }
+
+    .mypage-section .content-container {
+        flex: 2;
+    }
+}
+
+/* -----------------------------------
+   Stance and Issue Creation Forms
+----------------------------------- */
+.stance-post-form,
+.create-issue-form {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px var(--color-shadow);
+}
+
+.stance-post-form h3,
+.create-issue-form h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--color-dark-blue);
+    font-size: 20px;
+}
+
+.stance-post-form .form-group,
+.create-issue-form .form-group {
+    margin-bottom: 15px;
+}
+
+.stance-post-form label,
+.create-issue-form label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: var(--color-text);
+    font-size: 16px;
+}
+
+.stance-post-form .form-control,
+.create-issue-form .form-control {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.stance-post-form .form-control:focus,
+.create-issue-form .form-control:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 5px rgba(var(--color-primary), 0.3);
+}
+
+.stance-post-form textarea.form-control,
+.create-issue-form textarea.form-control {
+    resize: vertical;
+}
+
+.btn-submit-stance,
+.btn-create-issue {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
+    width: 100%;
+    text-align: center;
+}
+
+.btn-submit-stance:hover,
+.btn-create-issue:hover {
+    background-color: var(--color-primary-dark);
+}
+
+/* -----------------------------------
+   Login and Register Form Styles
+----------------------------------- */
+.login-container,
+.register-container {
+    max-width: 400px;
+    margin: 40px auto;
+    background-color: var(--color-white);
+    padding: 20px 25px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 10px var(--color-shadow);
+}
+
+.login-container h2,
+.register-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--color-dark-blue);
+    font-size: 24px;
+}
+
+.login-container label,
+.register-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: var(--color-text);
+    font-size: 16px;
+}
+
+.login-container input,
+.register-container input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.login-container button,
+.register-container button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    background-color: var(--color-primary);
+    border: none;
+    color: var(--color-white);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
+}
+
+.login-container button:hover,
+.register-container button:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.register-link,
+.login-link {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.register-link a,
+.login-link a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.register-link a:hover,
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+.error-message {
+    color: var(--color-danger);
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+/* Responsive Adjustments for Login and Register */
+@media (max-width: 600px) {
+    .login-container,
+    .register-container {
+        padding: 15px 20px;
+    }
+
+    .login-container h2,
+    .register-container h2 {
+        font-size: 20px;
+    }
+
+    .login-container label,
+    .register-container label {
+        font-size: 14px;
+    }
+
+    .login-container input,
+    .register-container input {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .login-container button,
+    .register-container button {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .register-link a,
+    .login-link a {
+        font-size: 12px;
+    }
+
+    .error-message {
+        font-size: 12px;
+    }
+}
+
+/* -----------------------------------
+   Responsive Navbar Adjustments
+----------------------------------- */
+@media (max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .navbar a {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+
+    .card,
+    .featured-issue-card,
+    .other-issue-card {
+        width: 100%;
+    }
+
+    .navbar-home a,
+    .navbar-mypage a,
+    .navbar-register a {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+}
+/* -----------------------------------
+   Success and Error Messages
+----------------------------------- */
+.success-message {
+    color: green;
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.error-message {
+    color: var(--color-danger);
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+/* -----------------------------------
+   Mypage Section Adjustments
+----------------------------------- */
+.mypage-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: var(--color-white);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px var(--color-shadow);
+    margin-top: 20px;
+}
+
+@media (min-width: 768px) {
+    .mypage-section {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .mypage-section .image-container {
+        flex: 1;
+        margin-right: 20px;
+    }
+
+    .mypage-section .content-container {
+        flex: 2;
+    }
+}
