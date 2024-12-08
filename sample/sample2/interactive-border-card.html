@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>インタラクティブボーダーカードサンプル</title>
+    <!-- Font AwesomeのCDNリンク（jsDelivrを使用） -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Calibri', sans-serif;
+            background-color: #f7f9fa;
+            padding: 35px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .horizontal-card {
+            display: flex;
+            align-items: center;
+            border: 2px solid #2980b9;
+            border-radius: 20px;
+            padding: 25px 30px;
+            max-width: 800px;
+            width: 100%;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .horizontal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -50%;
+            width: 200%;
+            height: 100%;
+            background: linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.0) 100%);
+            transform: skewX(-45deg);
+            transition: all 0.3s ease;
+        }
+
+        .horizontal-card:hover::before {
+            left: 0;
+            background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.0) 100%);
+        }
+
+        .horizontal-card:hover {
+            border-color: #27ae60;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .card-left {
+            flex: 0 0 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 25px;
+            position: relative;
+        }
+
+        .issue-category {
+            background-color: #8e44ad;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .trending-icon {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #f1c40f;
+            color: #fff;
+            padding: 6px;
+            border-radius: 50%;
+            font-size: 0.8em;
+        }
+
+        .vote-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: #bdc3c7;
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .vote-bar-yes {
+            background-color: #a29bfe;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            color: #fff;
+        }
+
+        .vote-bar-no {
+            background-color: #ff7675;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            color: #fff;
+        }
+
+        .vote-counts {
+            display: none; /* 数値を投票バー内に統合 */
+        }
+
+        .card-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .issue-title {
+            font-size: 1.25em;
+            margin-bottom: 14px;
+            color: #2c3e50;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .action-icons {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .action-icons .icon-wrapper {
+            position: relative;
+            cursor: pointer;
+            color: #2c3e50;
+            background-color: #dfe6e9;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .action-icons .icon-wrapper:hover {
+            background-color: #b2bec3;
+            color: #2980b9;
+        }
+
+        .action-icons .icon-wrapper .count {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            background-color: #d63031;
+            color: #fff;
+            border-radius: 50%;
+            padding: 2px 5px;
+            font-size: 0.7em;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .horizontal-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .card-left {
+                margin-right: 0;
+                margin-bottom: 18px;
+                flex-direction: row;
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .vote-bar-container {
+                width: 85%;
+            }
+
+            .action-icons {
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="horizontal-card">
+        <div class="card-left">
+            <span class="issue-category">教育</span>
+            <span class="trending-icon"><i class="fas fa-fire"></i></span>
+            <div class="vote-bar-container">
+                <div class="vote-bar-yes" style="width: 45%;">45%</div>
+                <div class="vote-bar-no" style="width: 55%;">55%</div>
+            </div>
+        </div>
+        <div class="card-right">
+            <h4 class="issue-title">オンライン教育の普及と質の向上について</h4>
+            <div class="action-icons">
+                <div class="icon-wrapper like-button" data-issue-id="5" tabindex="0" aria-label="いいね ボタン">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span class="count">22</span>
+                </div>
+                <div class="icon-wrapper favorite-button" data-issue-id="5" tabindex="0" aria-label="お気に入り ボタン">
+                    <i class="fas fa-star"></i>
+                    <span class="count">9</span>
+                </div>
+                <div class="icon-wrapper comment-button" data-issue-id="5" tabindex="0" aria-label="コメント ボタン">
+                    <i class="fas fa-comment"></i>
+                    <span class="count">7</span>
+                </div>
+                <div class="icon-wrapper stance-button" data-issue-id="5" tabindex="0" aria-label="スタンス ボタン">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span class="count">6</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // アクションアイコンのクリックイベントハンドラ
+        document.querySelectorAll('.action-icons .icon-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('click', () => {
+                // カウントを取得
+                let countSpan = wrapper.querySelector('.count');
+                let count = countSpan ? parseInt(countSpan.textContent) : 0;
+                // カウントを増加
+                count++;
+                // カウントを更新
+                countSpan.textContent = count;
+            });
+
+            // キーボード操作対応
+            wrapper.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    wrapper.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

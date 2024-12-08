@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>プロフィールモーダル - モダンダークグラデーション</title>
+    <style>
+        /* モーダルの背景 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.85);
+        }
+
+        /* モーダルコンテンツ */
+        .modal-content {
+            background: linear-gradient(135deg, #1c1c1c, #2c2c2c);
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 20px;
+            width: 400px;
+            position: relative;
+            color: #fff;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        /* クローズリンク */
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 24px;
+            text-decoration: none;
+            color: #bbb;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #fff;
+        }
+
+        /* プロフィール画像 */
+        .profile-img {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 3px solid #555;
+        }
+
+        /* リンク */
+        .modal a {
+            color: #ff9800;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .modal a:hover {
+            text-decoration: underline;
+        }
+
+        /* 情報セクション */
+        .info {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .info li {
+            margin: 10px 0;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .info li svg {
+            margin-right: 10px;
+            fill: #ff9800;
+            width: 20px;
+            height: 20px;
+        }
+
+        /* フィールドタイトル */
+        .field-title {
+            font-weight: bold;
+            margin-top: 15px;
+            display: block;
+            text-align: left;
+            color: #ff9800;
+        }
+
+        /* フィールド内容 */
+        .field-content {
+            margin-left: 30px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+<!-- トリガー -->
+<a href="#" id="openModal" style="color: #ff9800; text-decoration: none;">作成者名: 山田太郎</a>
+
+<!-- モーダル -->
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <a class="close" id="closeModal">&times;</a>
+        <img src="profile.jpg" alt="プロフィール画像" class="profile-img">
+        <h2>山田太郎</h2>
+        <a href="#" id="xLink">X プロフィール</a></br>
+        <a href="https://youtube.com/yourchannel" target="_blank">YouTubeチャンネル</a>
+        <ul class="info">
+            <li>
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                </svg>
+                作成したイシュー数: 42
+            </li>
+            <li>
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
+                </svg>
+                保有ゴールドコイン数: 150
+            </li>
+            <li>
+                <span class="field-title">専門分野:</span>
+                <span class="field-content">政治, 経済</span>
+            </li>
+            <li>
+                <span class="field-title">関心分野:</span>
+                <span class="field-content">ライフ, 社会, 少子化</span>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+    const openModal = document.getElementById('openModal');
+    const modal = document.getElementById('myModal');
+    const closeModal = document.getElementById('closeModal');
+
+    openModal.onclick = function(e) {
+        e.preventDefault();
+        modal.style.display = 'block';
+    }
+
+    closeModal.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>

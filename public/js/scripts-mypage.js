@@ -4,25 +4,26 @@
  * 共通のログアウト関数
  */
 function logout() {
-    fetch('/logout')
-        .then(response => {
-            if (response.redirected) {
-                window.location.href = response.url;
-            } else {
-                window.location.href = '/login';
-            }
-        })
-        .catch(err => {
-            console.error('Logout error:', err);
-            alert('ログアウトに失敗しました。');
-        });
+    console.log('Attempting to logout...');
+    fetch('/logout', {
+        method: 'GET',
+        credentials: 'same-origin' // セッション情報を含める
+    })
+    .then(response => {
+        console.log('Logout response received, redirecting to /login');
+        window.location.href = '/login'; // 相対パスを使用
+    })
+    .catch(err => {
+        console.error('Logout error:', err);
+        alert('ログアウトに失敗しました。');
+    });
 }
 
 /**
  * ユーザー情報を取得して表示
  */
 function fetchUserInfo() {
-    fetch('/api/user')
+    fetch('/api/user', { credentials: 'same-origin' })
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -69,6 +70,7 @@ function setElementText(elementId, text) {
         console.warn(`要素が見つかりませんでした: ${elementId}`);
     }
 }
+
 /**
  * フォームの初期化とイベントリスナーの登録
  */
@@ -98,6 +100,12 @@ function initializeForms() {
             likeIssue(issueId);
         }
     });
+
+    // ログアウトボタンのクリックイベントを登録
+    const logoutButtons = document.querySelectorAll('.btn-logout');
+    logoutButtons.forEach(button => {
+        button.addEventListener('click', logout);
+    });
 }
 
 /**
@@ -122,13 +130,15 @@ function submitStance() {
     fetch('/api/stances', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ issue_id: issueId, stance, comment })
+        body: JSON.stringify({ issue_id: issueId, stance, comment }),
+        credentials: 'same-origin' // セッション情報を含める
     })
     .then(handleFetchResponse)
     .then(data => {
         successDiv.textContent = 'スタンスが投稿されました！';
         document.getElementById('post-stance-form').reset();
         // 必要に応じてスタンス一覧を再取得・更新
+        refreshIssues();
     })
     .catch(err => {
         console.error('Error posting stance:', err);
@@ -143,6 +153,8 @@ function createIssue() {
     const headline = document.getElementById('headline').value.trim();
     const description = document.getElementById('description').value.trim();
     const tag = document.getElementById('tag').value;
+    const isFeaturedCheckbox = document.getElementById('isFeatured');
+    const isFeatured = isFeaturedCheckbox ? isFeaturedCheckbox.checked : false;
     const errorDiv = document.getElementById('issue-error');
     const successDiv = document.getElementById('issue-success');
 
@@ -158,14 +170,15 @@ function createIssue() {
     fetch('/api/issues', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ headline, description, tag, is_featured: isFeatured })
+        body: JSON.stringify({ headline, description, tag, is_featured: isFeatured }),
+        credentials: 'same-origin' // セッション情報を含める
     })
     .then(handleFetchResponse)
     .then(data => {
         successDiv.textContent = 'イシューが作成されました！';
         document.getElementById('create-issue-form').reset();
         // 必要に応じてイシュー一覧を再取得・更新
-        displayIssues('/api/issues', 'existingIssues', createIssueCard);
+        refreshIssues();
     })
     .catch(err => {
         console.error('Error creating issue:', err);
@@ -180,6 +193,7 @@ function createIssue() {
 function likeIssue(issueId) {
     fetch(`/api/issues/${issueId}/like`, {
         method: 'POST',
+        credentials: 'same-origin' // セッション情報を含める
     })
     .then(handleFetchResponse)
     .then(data => {
@@ -231,8 +245,8 @@ function createIssueCard(issue) {
             <p>${sanitizeHTML(issue.description)}</p>
             <p>カテゴリ: ${sanitizeHTML(issue.tag)}</p>
             <div class="vote-bar-container">
-                <div class="vote-bar vote-bar-yes" style="width: ${sanitizePercentage(issue.yes_percent)}%;"></div>
-                <div class="vote-bar vote-bar-no" style="width: ${sanitizePercentage(issue.no_percent)}%;"></div>
+                <div class="vote-bar vote-bar-yes ${getWidthClass(issue.yes_percent)}"></div>
+                <div class="vote-bar vote-bar-no ${getWidthClass(issue.no_percent)}"></div>
             </div>
             <div class="vote-counts">
                 <span>YES: ${sanitizePercentage(issue.yes_percent)}%</span>
@@ -243,6 +257,16 @@ function createIssueCard(issue) {
             </button>
         </div>
     `;
+}
+
+/**
+ * 幅クラスを取得
+ * @param {number} percent - パーセンテージ
+ * @returns {string} - CSSクラス名
+ */
+function getWidthClass(percent) {
+    const rounded = Math.round(percent / 10) * 10;
+    return `width-${rounded}`;
 }
 
 /**
@@ -258,7 +282,7 @@ function displayIssues(url, containerId, cardCreator) {
         return;
     }
 
-    fetch(url)
+    fetch(url, { credentials: 'same-origin' }) // セッション情報を含める
         .then(handleFetchResponse)
         .then(data => {
             if (!Array.isArray(data)) {
@@ -278,39 +302,47 @@ function displayIssues(url, containerId, cardCreator) {
 }
 
 /**
- * DOMが読み込まれた後の処理
+ * イシュー一覧を再取得・更新する関数
  */
-document.addEventListener('DOMContentLoaded', () => {
-    fetchUserInfo(); // ユーザー情報を取得して表示
-    initializeTagDropdown(); // カテゴリドロップダウンを初期化
-    initializeIssueDropdown(); // イシュードロップダウンを初期化
-    initializeForms(); // フォームのイベントリスナーを登録
-
-    // フィーチャーイシューとその他のイシューを表示
+function refreshIssues() {
+    // フィーチャーイシューとその他のイシューをそれぞれ再取得
     displayIssues('/api/featured_issues', 'featured-issues', createIssueCard); // フィーチャーイシュー
-    displayIssues('/api/issues', 'existingIssues', createIssueCard); // その他のイシュー
-});
+    displayIssues('/api/issues_with_votes', 'existingIssues', createIssueCard); // その他のイシュー
+}
 
 /**
- * カテゴリドロップダウンを初期化
+ * カテゴリドロップダウンを初期化（バックエンドから取得）
  */
 function initializeTagDropdown() {
-    const presetTags = [
-        '政治', '社会', '経済', '外交', '国際', '税金', 'ビジネス', '少子高齢化', '医療福祉'
-    ];
-
     const tagDropdown = document.getElementById('tag');
     if (!tagDropdown) {
         console.error("タグドロップダウンが見つかりませんでした。");
         return;
     }
 
-    presetTags.forEach(tag => {
-        const option = document.createElement('option');
-        option.value = tag;
-        option.textContent = tag;
-        tagDropdown.appendChild(option);
-    });
+    // 既存のオプションをクリア
+    tagDropdown.innerHTML = '<option value="">選択してください</option>';
+
+    fetch('/api/categories', { credentials: 'same-origin' })
+        .then(handleFetchResponse)
+        .then(categories => {
+            if (!Array.isArray(categories) || categories.length === 0) {
+                console.warn('利用可能なカテゴリがありません。');
+                tagDropdown.innerHTML = '<option disabled>利用可能なカテゴリがありません</option>';
+                return;
+            }
+
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.name; // バックエンドから送信されるnameを使用
+                option.textContent = category.name;
+                tagDropdown.appendChild(option);
+            });
+        })
+        .catch(err => {
+            console.error('Error fetching categories:', err);
+            tagDropdown.innerHTML = '<option disabled>カテゴリの取得に失敗しました</option>';
+        });
 }
 
 /**
@@ -323,10 +355,13 @@ function initializeIssueDropdown() {
         return;
     }
 
-    fetch('/api/issues')
+    // 既存のオプションをクリア
+    issueDropdown.innerHTML = '<option value="">選択してください</option>';
+
+    fetch('/api/issues', { credentials: 'same-origin' })
         .then(handleFetchResponse)
         .then(issues => {
-            if (!issues.length) {
+            if (!Array.isArray(issues) || issues.length === 0) {
                 console.warn('利用可能なイシューがありません。');
                 issueDropdown.innerHTML = '<option disabled>利用可能なイシューがありません</option>';
                 return;
@@ -344,18 +379,24 @@ function initializeIssueDropdown() {
             issueDropdown.innerHTML = '<option disabled>イシューの取得に失敗しました</option>';
         });
 }
-// scripts-mypage.js
 
 /**
- * 要素のテキストを設定する関数
- * @param {string} elementId - 対象要素のID
- * @param {string} text - 設定するテキスト
+ * DOMが読み込まれた後の処理
  */
-function setElementText(elementId, text) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.textContent = text;
-    } else {
-        console.warn(`要素が見つかりませんでした: ${elementId}`);
-    }
-}
+document.addEventListener('DOMContentLoaded', () => {
+    // ログアウトボタンのイベントリスナーを追加
+    const logoutButtons = document.querySelectorAll('.btn-logout');
+    logoutButtons.forEach(button => {
+        button.addEventListener('click', logout);
+    });
+
+    // 初期化処理
+    fetchUserInfo(); // ユーザー情報を取得して表示
+    initializeTagDropdown(); // カテゴリドロップダウンを初期化
+    initializeIssueDropdown(); // イシュードロップダウンを初期化
+    initializeForms(); // フォームのイベントリスナーを登録
+
+    // イシューの表示
+    displayIssues('/api/featured_issues', 'featured-issues', createIssueCard); // フィーチャーイシュー
+    displayIssues('/api/issues_with_votes', 'existingIssues', createIssueCard); // その他のイシュー
+});

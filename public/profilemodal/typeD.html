@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>既存サイトにモーダルを統合</title>
+    <link rel="stylesheet" href="main.css"> <!-- 既存のCSSファイル -->
+    <!-- モーダル用スタイルはmain.cssに追加 -->
+</head>
+<body>
+
+    <!-- 他のコンテンツ -->
+
+    <!-- トリガー -->
+    <a href="#" id="openModal" style="color: var(--color-primary); text-decoration: none;">作成者名</a>
+
+    <!-- モーダル -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <a class="close" id="closeModal">&times;</a>
+            <img src="profile.png" alt="プロフィール画像" class="profile-img">
+            <h2>山田太郎</h2>
+            <a href="#" id="xLink">X プロフィール</a>
+            <a href="https://youtube.com/yourchannel" target="_blank" rel="noopener noreferrer">YouTubeチャンネル</a>
+            <ul class="info">
+                <li>
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                    </svg>
+                    作成したイシュー数: 42
+                </li>
+                <li>
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 
+                                 2 12.28 2 8.5 2 5.42 
+                                 4.42 3 7.5 3c1.74 0 3.41 0.81 
+                                 4.5 2.09C13.09 3.81 14.76 3 
+                                 16.5 3 19.58 3 22 5.42 
+                                 22 8.5c0 3.78-3.4 6.86-8.55 
+                                 11.54L12 21.35z"></path>
+                    </svg>
+                    受け取ったいいねの数: 120
+                </li>
+                <li>
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 
+                                 9.24l-7.19-.61L12 2 9.19 8.63 
+                                 2 9.24l5.46 4.73L5.82 21z"></path>
+                    </svg>
+                    保有ゴールドコイン数: 150
+                </li>
+                
+                <li>
+                    <span class="field-title">専門分野:</span>
+                    <span class="field-content">政治, 経済</span>
+                </li>
+                <li>
+                    <span class="field-title">関心分野:</span>
+                    <span class="field-content">ライフ, 社会, 少子化</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // JavaScript for Modal functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const openModal = document.getElementById('openModal');
+            const modal = document.getElementById('myModal');
+            const closeModal = document.getElementById('closeModal');
+
+            openModal.addEventListener('click', function(e) {
+                e.preventDefault();
+                modal.style.display = 'block';
+            });
+
+            closeModal.addEventListener('click', function(e) {
+                e.preventDefault();
+                modal.style.display = 'none';
+            });
+
+            window.addEventListener('click', function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            });
+
+            // キーボード操作でEscキーを押したときにモーダルを閉じる
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>アイコン統合デザインカードサンプル</title>
+    <!-- Font AwesomeのCDNリンク -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+          integrity="sha512-pO3Z1n3ZDhE5Cevt6aH0OqDn74v7Qk96PvUV3nMhd3wRr3wprOJa9CuhYkNsRVL60k+GTxD1vXGwPT8GJt5qkA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #eef2f3;
+            padding: 20px;
+        }
+
+        .horizontal-card {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 25px auto;
+            max-width: 750px;
+            background-color: #fff;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+            position: relative;
+        }
+
+        .horizontal-card:hover {
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            transform: translateY(-5px);
+        }
+
+        .card-left {
+            flex: 0 0 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 25px;
+            position: relative;
+        }
+
+        .issue-category {
+            background-color: #3498db;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .trending-icon {
+            position: absolute;
+            top: -8px;
+            right: -12px;
+            background-color: #e74c3c;
+            color: #fff;
+            padding: 6px;
+            border-radius: 50%;
+            font-size: 0.7em;
+        }
+
+        .vote-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: #bdc3c7;
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex;
+            margin-bottom: 8px;
+        }
+
+        .vote-bar-yes {
+            background-color: #a2d5f2;
+            height: 100%;
+        }
+
+        .vote-bar-no {
+            background-color: #f2a2a2;
+            height: 100%;
+        }
+
+        .vote-counts {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+
+        .card-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .issue-title {
+            font-size: 1.2em;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .action-icons {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .action-icons .icon-wrapper {
+            position: relative;
+            cursor: pointer;
+            color: #34495e;
+            transition: color 0.3s ease;
+        }
+
+        .action-icons .icon-wrapper:hover {
+            color: #2980b9;
+        }
+
+        .action-icons .icon-wrapper .count {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background-color: #e74c3c;
+            color: #fff;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7em;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .horizontal-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .card-left {
+                margin-right: 0;
+                margin-bottom: 15px;
+                flex-direction: row;
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .vote-bar-container {
+                width: 80%;
+            }
+
+            .action-icons {
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="horizontal-card">
+        <div class="card-left">
+            <span class="issue-category">社会</span>
+            <span class="trending-icon"><i class="fas fa-fire"></i></span>
+            <div class="vote-bar-container">
+                <div class="vote-bar-yes" style="width: 50%;"></div>
+                <div class="vote-bar-no" style="width: 50%;"></div>
+            </div>
+            <div class="vote-counts">
+                <span>YES: 50%</span>
+                <span>NO: 50%</span>
+            </div>
+        </div>
+        <div class="card-right">
+            <h4 class="issue-title">公共交通機関の無料化について</h4>
+            <div class="action-icons">
+                <div class="icon-wrapper like-button" data-issue-id="3">
+                    <i class="fas fa-heart"></i>
+                    <span class="count">30</span>
+                </div>
+                <div class="icon-wrapper favorite-button" data-issue-id="3">
+                    <i class="fas fa-star"></i>
+                    <span class="count">12</span>
+                </div>
+                <div class="icon-wrapper comment-button" data-issue-id="3">
+                    <i class="fas fa-comment"></i>
+                    <span class="count">5</span>
+                </div>
+                <div class="icon-wrapper stance-button" data-issue-id="3">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span class="count">8</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // アクションアイコンのクリックイベントハンドラ
+        document.querySelectorAll('.action-icons .icon-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('click', () => {
+                // カウントを取得
+                let countSpan = wrapper.querySelector('.count');
+                let count = countSpan ? parseInt(countSpan.textContent) : 0;
+                // カウントを増加
+                count++;
+                // カウントを更新
+                countSpan.textContent = count;
+            });
+        });
+    </script>
+</body>
+</html>

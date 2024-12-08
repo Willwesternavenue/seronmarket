@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>モダンフラットデザインカードサンプル</title>
+    <!-- Font AwesomeのCDNリンク（jsDelivrを使用） -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+
+        .horizontal-card {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin: 20px auto;
+            max-width: 700px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .horizontal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-left {
+            flex: 0 0 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 20px;
+            position: relative;
+        }
+
+        .issue-category {
+            background-color: #17a2b8; /* 色を変更可能 */
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.75em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .trending-icon {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #ff4757; /* 色を変更可能 */
+            color: #fff;
+            padding: 5px;
+            border-radius: 50%;
+            font-size: 0.7em;
+        }
+
+        .vote-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+        }
+
+        .vote-bar-yes {
+            background-color: #a8dadc;
+            height: 100%;
+        }
+
+        .vote-bar-no {
+            background-color: #ffb4a2;
+            height: 100%;
+        }
+
+        .vote-counts {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            margin-top: 5px;
+            color: #555;
+            width: 100%;
+        }
+
+        .vote-counts span {
+            flex: 1;
+            text-align: center;
+        }
+
+        .card-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .issue-title {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .like-button,
+        .favorite-button,
+        .comment-button,
+        .trending-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            background-color: #ffffff;
+            color: #555;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-size: 0.85em;
+        }
+
+        .like-button:hover,
+        .favorite-button:hover,
+        .comment-button:hover,
+        .trending-button:hover {
+            background-color: #f0f0f0;
+            color: #000;
+        }
+
+        .like-button .icon,
+        .favorite-button .icon,
+        .comment-button .icon,
+        .trending-button .icon {
+            margin-right: 5px;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .horizontal-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .card-left {
+                flex-direction: row;
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+
+            .vote-bar-container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="horizontal-card">
+        <div class="card-left">
+            <span class="issue-category">経済</span>
+            <span class="trending-icon"><i class="fas fa-fire"></i></span>
+            <div class="vote-bar-container">
+                <div class="vote-bar-yes" style="width: 65%;"></div>
+                <div class="vote-bar-no" style="width: 35%;"></div>
+            </div>
+            <div class="vote-counts">
+                <span>YES: 65%</span>
+                <span>NO: 35%</span>
+            </div>
+        </div>
+        <div class="card-right">
+            <h4 class="issue-title">最低賃金の引き上げについて</h4>
+            <div class="action-buttons">
+                <button class="like-button" data-issue-id="2" tabindex="0" aria-label="いいね ボタン">
+                    <i class="fas fa-heart icon"></i>いいね (25)
+                </button>
+                <button class="favorite-button" data-issue-id="2" tabindex="0" aria-label="お気に入り ボタン">
+                    <i class="fas fa-star icon"></i>お気に入り (10)
+                </button>
+                <button class="comment-button" data-issue-id="2" tabindex="0" aria-label="コメント ボタン">
+                    <i class="fas fa-comment icon"></i>コメント (8)
+                </button>
+                <button class="trending-button" data-issue-id="2" tabindex="0" aria-label="スタンス ボタン">
+                    <i class="fas fa-arrow-up icon"></i>スタンス (5)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ボタンのクリックイベントハンドラ
+        document.querySelectorAll('.action-buttons button').forEach(button => {
+            button.addEventListener('click', () => {
+                // カウントを取得
+                let countText = button.textContent.match(/\((\d+)\)/);
+                let count = countText ? parseInt(countText[1]) : 0;
+                // カウントを増加
+                count++;
+                // ボタンのHTMLを更新
+                let iconClass = button.querySelector('.icon').className;
+                let buttonText = button.textContent.split('(')[0].trim();
+                button.innerHTML = `<i class="${iconClass}"></i>${buttonText} (${count})`;
+            });
+
+            // キーボード操作対応
+            button.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    button.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

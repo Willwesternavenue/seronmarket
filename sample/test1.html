@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>クリーンなボックス型カードサンプル</title>
+    <!-- Font AwesomeのCDNリンク -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pO3Z1n3ZDhE5Cevt6aH0OqDn74v7Qk96PvUV3nMhd3wRr3wprOJa9CuhYkNsRVL60k+GTxD1vXGwPT8GJt5qkA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* クリーンなボックス型カードのスタイル */
+        .clean-box-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 400px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .clean-box-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .issue-title {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .issue-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .issue-category {
+            background-color: #007bff;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+
+        .vote-bar-container {
+            display: flex;
+            width: 60%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .vote-bar {
+            height: 100%;
+        }
+
+        .vote-bar-yes {
+            background-color: #28a745; /* 緑色 */
+        }
+
+        .vote-bar-no {
+            background-color: #dc3545; /* 赤色 */
+        }
+
+        .vote-counts {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .like-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: #28a745; /* 緑色の背景 */
+            color: #fff;              /* 白色のテキスト */
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            min-width: 140px;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .like-button .icon {
+            margin-right: 8px;
+            font-size: 1em;
+            transition: color 0.3s ease;
+        }
+
+        .like-button:hover {
+            background-color: #218838;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .like-button:active {
+            background-color: #1e7e34;
+            transform: scale(1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: #ffc107;
+        }
+
+        .like-button:hover .icon {
+            color: #ffc107;
+        }
+
+        .like-button:active .icon {
+            color: #e0a800;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 600px) {
+            .clean-box-card {
+                padding: 10px;
+                max-width: 90%;
+            }
+
+            .issue-title {
+                font-size: 1em;
+            }
+
+            .vote-bar-container {
+                width: 50%;
+            }
+
+            .like-button {
+                min-width: 100px;
+                padding: 6px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="clean-box-card">
+        <h4 class="issue-title">気候変動対策の強化</h4>
+        <div class="issue-meta">
+            <span class="issue-category">環境</span>
+            <div class="vote-bar-container">
+                <div class="vote-bar vote-bar-yes" style="width: 70%;"></div>
+                <div class="vote-bar vote-bar-no" style="width: 30%;"></div>
+            </div>
+        </div>
+        <div class="vote-counts">
+            <span>YES: 70%</span>
+            <span>NO: 30%</span>
+        </div>
+        <div class="button-container">
+            <button class="like-button" data-issue-id="1">
+                <i class="fas fa-heart icon"></i>関心あり (10)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 関心ありボタンのクリックイベント
+        document.querySelectorAll('.like-button').forEach(button => {
+            button.addEventListener('click', () => {
+                let countText = button.textContent.match(/\((\d+)\)/);
+                let count = countText ? parseInt(countText[1]) : 0;
+                count++;
+                button.innerHTML = `<i class="fas fa-heart icon"></i>関心あり (${count})`;
+            });
+        });
+    </script>
+</body>
+</html>

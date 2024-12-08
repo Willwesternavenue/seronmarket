@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>プロフィールモーダル - ミニマルダークシック</title>
+    <style>
+        /* モーダルの背景 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.75);
+        }
+
+        /* モーダルコンテンツ */
+        .modal-content {
+            background-color: #121212;
+            margin: 5% auto;
+            padding: 35px;
+            border-radius: 30px;
+            width: 500px;
+            position: relative;
+            color: #e0e0e0;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        /* クローズリンク */
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 26px;
+            text-decoration: none;
+            color: #ff9800;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #fff;
+        }
+
+        /* プロフィール画像 */
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin-bottom: 25px;
+            border: 4px solid #ff9800;
+            object-fit: cover;
+        }
+
+        /* リンク */
+        .modal a {
+            color: #ff9800;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-block;
+            margin: 12px 0;
+            transition: color 0.3s;
+        }
+
+        .modal a:hover {
+            color: #fff;
+        }
+
+        /* 情報セクション */
+        .info {
+            list-style: none;
+            padding: 0;
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .info li {
+            margin: 15px 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+
+        .info li svg {
+            margin-right: 15px;
+            stroke: #ff9800;
+            stroke-width: 2;
+            fill: none;
+            width: 24px;
+            height: 24px;
+        }
+
+        /* フィールドタイトル */
+        .field-title {
+            font-weight: bold;
+            margin-top: 25px;
+            display: block;
+            text-align: left;
+            color: #ff9800;
+        }
+
+        /* フィールド内容 */
+        .field-content {
+            margin-left: 35px;
+            text-align: left;
+            color: #bdbdbd;
+        }
+
+        /* ラインアートアイコン */
+        .line-icon {
+            stroke: #ff9800;
+            stroke-width: 2;
+            fill: none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- トリガー -->
+<a href="#" id="openModal" style="color: #ff9800; text-decoration: none;">作成者名</a>
+
+<!-- モーダル -->
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <a class="close" id="closeModal">&times;</a>
+        <img src="profile.jpg" alt="プロフィール画像" class="profile-img">
+        <h2>User123</h2>
+        <a href="#" id="xLink">Xのリンク</a>
+        <a href="https://youtube.com/yourchannel" target="_blank">YouTube</a>
+        <ul class="info">
+            <li>
+                <svg class="line-icon" viewBox="0 0 24 24">
+                    <path d="M12 2L15 8H9L12 2Z"></path>
+                </svg>
+                作成したイシュー数: 42
+            </li>
+            <li>
+                <svg class="line-icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"></circle>
+                </svg>
+                保有ゴールドコイン数: 150
+            </li>
+            <li>
+                <span class="field-title">専門分野:</span>
+                <span class="field-content">政治, 経済</span>
+            </li>
+            <li>
+                <span class="field-title">関心分野:</span>
+                <span class="field-content">ライフ, 社会, 少子化</span>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+    const openModal = document.getElementById('openModal');
+    const modal = document.getElementById('myModal');
+    const closeModal = document.getElementById('closeModal');
+
+    openModal.onclick = function(e) {
+        e.preventDefault();
+        modal.style.display = 'block';
+    }
+
+    closeModal.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>

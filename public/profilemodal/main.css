@@ -1,0 +1,156 @@
+:root {
+    /* Colors */
+    --color-primary: #007bff;
+    --color-primary-dark: #0056b3;
+    --color-danger: #dc3545;
+    --color-danger-dark: #c82333;
+    --color-background: #f4f4f4;
+    --color-white: #ffffff;
+    --color-dark-blue: #004085;
+    --color-light-gray: #f8f9fa;
+    --color-border: #ddd;
+    --color-shadow: rgba(0, 0, 0, 0.1);
+    --color-text: #555;
+    --color-text-dark: #333;
+    --color-gold: #f0ad4e;
+    --color-star: #ffcc00;
+
+    /* Fonts */
+    --font-family: Arial, sans-serif;
+
+    /* Others */
+    --border-radius: 8px;
+    --transition-speed: 0.3s;
+}
+
+/* -----------------------------------
+   Modal Styles
+----------------------------------- */
+
+/* モーダルの背景 */
+.modal {
+    display: none; /* デフォルトは非表示 */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.1); /* 明るいオーバーレイ */
+}
+
+/* モーダルコンテンツ */
+.modal-content {
+    background-color: var(--color-white);
+    margin: 5% auto;
+    padding: 40px;
+    border-radius: 24px; /* 丸みを増やす */
+    width: 400px; /* サイズを半分に縮小 */
+    position: relative;
+    box-shadow: 0 8px 16px var(--color-shadow);
+    text-align: center;
+}
+
+/* クローズリンク */
+.close {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    font-size: 28px;
+    text-decoration: none;
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: color var(--transition-speed);
+}
+
+.close:hover {
+    color: var(--color-primary-dark);
+}
+
+/* プロフィール画像 */
+.profile-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin-bottom: 20px;
+    border: 4px solid var(--color-primary);
+    object-fit: cover;
+}
+
+/* リンク */
+.modal a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    margin: 12px 0;
+    transition: color var(--transition-speed);
+}
+
+.modal a:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+}
+
+/* 情報セクション */
+.info {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+    text-align: left;
+}
+
+.info li {
+    margin: 18px 0;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+}
+
+.info li svg {
+    margin-right: 18px;
+    fill: var(--color-primary);
+    width: 26px;
+    height: 26px;
+}
+
+/* フィールドタイトル */
+.field-title {
+    font-weight: bold;
+    color: var(--color-text-dark);
+    margin-top: 22px;
+    display: block;
+}
+
+/* フィールド内容 */
+.field-content {
+    margin-left: 40px;
+    color: var(--color-text);
+}
+@media (max-width: 768px) {
+    .modal-content {
+        width: 90%;
+        padding: 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+
+    .profile-img {
+        width: 100px;
+        height: 100px;
+    }
+
+    .info li {
+        font-size: 16px;
+    }
+
+    .field-content {
+        margin-left: 30px;
+    }
+}

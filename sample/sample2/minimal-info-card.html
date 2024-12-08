@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ミニマルインフォメーションカードサンプル</title>
+    <!-- Font AwesomeのCDNリンク -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+          integrity="sha512-pO3Z1n3ZDhE5Cevt6aH0OqDn74v7Qk96PvUV3nMhd3wRr3wprOJa9CuhYkNsRVL60k+GTxD1vXGwPT8GJt5qkA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            font-family: 'Tahoma', Geneva, sans-serif;
+            background-color: #e8f6ff;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .horizontal-card {
+            display: flex;
+            align-items: center;
+            border: 1px solid #b2bec3;
+            border-radius: 12px;
+            padding: 20px 25px;
+            max-width: 750px;
+            width: 100%;
+            background-color: #ffffff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .horizontal-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .card-left {
+            flex: 0 0 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 20px;
+            position: relative;
+        }
+
+        .issue-category {
+            background-color: #00cec9;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .trending-icon {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #fdcb6e;
+            color: #fff;
+            padding: 5px;
+            border-radius: 50%;
+            font-size: 0.8em;
+        }
+
+        .vote-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: #bdc3c7;
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .vote-bar-yes {
+            background-color: #74b9ff;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            color: #fff;
+        }
+
+        .vote-bar-no {
+            background-color: #ff7675;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            color: #fff;
+        }
+
+        .vote-counts {
+            display: none; /* 数値を投票バー内に統合 */
+        }
+
+        .card-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .issue-title {
+            font-size: 1.2em;
+            margin-bottom: 14px;
+            color: #2d3436;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .action-icons {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .action-icons .icon-wrapper {
+            position: relative;
+            cursor: pointer;
+            color: #2d3436;
+            background-color: #b2bec3;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .action-icons .icon-wrapper:hover {
+            background-color: #636e72;
+            color: #2980b9;
+        }
+
+        .action-icons .icon-wrapper .count {
+            position: absolute;
+            bottom: -4px;
+            right: -6px;
+            background-color: #d63031;
+            color: #fff;
+            border-radius: 50%;
+            padding: 2px 5px;
+            font-size: 0.6em;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .horizontal-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .card-left {
+                margin-right: 0;
+                margin-bottom: 15px;
+                flex-direction: row;
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .vote-bar-container {
+                width: 85%;
+            }
+
+            .action-icons {
+                gap: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="horizontal-card">
+        <div class="card-left">
+            <span class="issue-category">健康</span>
+            <span class="trending-icon"><i class="fas fa-fire"></i></span>
+            <div class="vote-bar-container">
+                <div class="vote-bar-yes" style="width: 50%;">50%</div>
+                <div class="vote-bar-no" style="width: 50%;">50%</div>
+            </div>
+        </div>
+        <div class="card-right">
+            <h4 class="issue-title">新型コロナウイルスワクチンの普及率向上について</h4>
+            <div class="action-icons">
+                <div class="icon-wrapper like-button" data-issue-id="4">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span class="count">18</span>
+                </div>
+                <div class="icon-wrapper favorite-button" data-issue-id="4">
+                    <i class="fas fa-star"></i>
+                    <span class="count">7</span>
+                </div>
+                <div class="icon-wrapper comment-button" data-issue-id="4">
+                    <i class="fas fa-comment"></i>
+                    <span class="count">3</span>
+                </div>
+                <div class="icon-wrapper stance-button" data-issue-id="4">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span class="count">4</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // アクションアイコンのクリックイベントハンドラ
+        document.querySelectorAll('.action-icons .icon-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('click', () => {
+                // カウントを取得
+                let countSpan = wrapper.querySelector('.count');
+                let count = countSpan ? parseInt(countSpan.textContent) : 0;
+                // カウントを増加
+                count++;
+                // カウントを更新
+                countSpan.textContent = count;
+            });
+        });
+    </script>
+</body>
+</html>

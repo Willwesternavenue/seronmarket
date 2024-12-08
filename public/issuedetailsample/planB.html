@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>イシュー - 夫婦別姓制度に賛成するか？</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .issue-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+        .category-featured {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .category {
+            background-color: #e0e0e0;
+            color: #333;
+            padding: 6px 12px;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+        .featured {
+            background-color: #ff5722;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+        .charts {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .chart-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 20px;
+        }
+        .chart-container canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .legend {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .comments {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            flex-wrap: wrap;
+        }
+        .comments-side {
+            width: 48%;
+            min-width: 300px;
+        }
+        .comments-side h2 {
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            color: #333;
+        }
+        .comment {
+            background-color: #fafafa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        .comment:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .likes {
+            color: #888;
+            float: right;
+        }
+        .comment-details {
+            display: none;
+            margin-top: 10px;
+            color: #555;
+        }
+        .ai-comments {
+            margin-top: 50px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-left: 5px solid #1E88E5;
+            border-radius: 8px;
+        }
+        .ai-comments h3 {
+            margin-top: 0;
+            color: #1E88E5;
+        }
+        .ai-comment {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        .ai-comment:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        @media (max-width: 768px) {
+            .comments-side {
+                width: 100%;
+            }
+        }
+    </style>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Data Labels Plugin CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="category-featured">
+                <span class="category">社会</span>
+                <span class="featured">Featured</span>
+            </div>
+            <h1 class="issue-title">イシュー: 夫婦別姓制度に賛成するか？</h1>
+        </div>
+        <div class="charts">
+            <div class="chart-container">
+                <canvas id="userChart"></canvas>
+                <div class="legend">世論スタンス</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="aiChart"></canvas>
+                <div class="legend">AI評価</div>
+            </div>
+        </div>
+        <div class="ai-comments">
+            <h3>AI評価コメント</h3>
+            <div class="ai-comment">
+                <strong>AIからの YES コメント</strong>
+                <p>夫婦別姓制度の導入は、個々のアイデンティティを尊重し、多様な家族形態を受け入れる社会の一歩となります。個人の選択の自由を広げ、性別に依存しない社会の構築に寄与すると考えられます。</p>
+                <span class="likes">👍 25</span>
+            </div>
+            <div class="ai-comment">
+                <strong>AIからの NO コメント</strong>
+                <p>夫婦別姓制度の導入は、伝統的な家族観を揺るがす可能性があり、社会的な混乱を招く恐れがあります。また、姓の統一が家族の一体感を醸成する役割を果たしている点を考慮する必要があります。</p>
+                <span class="likes">👍 18</span>
+            </div>
+
+        <div class="comments">
+            <div class="comments-side">
+                <h2>YES コメント</h2>
+                <div id="yes-comments">
+                    <!-- YESコメントがここに展開 -->
+                </div>
+            </div>
+            <div class="comments-side">
+                <h2>NO コメント</h2>
+                <div id="no-comments">
+                    <!-- NOコメントがここに展開 -->
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    <script>
+        // データ設定
+        const userData = {
+            labels: ['YES', 'NO', '様子見'],
+            datasets: [{
+                data: [55, 35, 10],
+                backgroundColor: ['#42A5F5', '#EF5350', '#B0BEC5'],
+                hoverBackgroundColor: ['#64B5F6', '#E57373', '#CFD8DC']
+            }]
+        };
+
+        const aiData = {
+            labels: ['YES', 'NO'],
+            datasets: [{
+                data: [60, 40],
+                backgroundColor: ['#1E88E5', '#C62828'],
+                hoverBackgroundColor: ['#1565C0', '#B71C1C']
+            }]
+        };
+
+        // チャート描画関数
+        function createChart(ctx, data, isAI = false) {
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: data,
+                plugins: [ChartDataLabels],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true
+                        },
+                        datalabels: {
+                            color: '#000',
+                            formatter: (value, context) => {
+                                const sum = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / sum) * 100).toFixed(1) + '%';
+                                return percentage;
+                            },
+                            font: {
+                                weight: 'bold',
+                                size: 14
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ユーザーチャート
+        const userCtx = document.getElementById('userChart').getContext('2d');
+        createChart(userCtx, userData);
+
+        // AIチャート
+        const aiCtx = document.getElementById('aiChart').getContext('2d');
+        createChart(aiCtx, aiData, true);
+
+        // コメントデータ
+        const yesComments = [
+            { text: "夫婦が別々の姓を持つことは、個人のアイデンティティを尊重する上で重要です。", likes: 18 },
+            { text: "賛成です！姓を選ぶ自由は大切です。", likes: 14 },
+            { text: "支持します。伝統に縛られない柔軟な社会が必要です。", likes: 9 }
+        ];
+
+        const noComments = [
+            { text: "夫婦で同じ姓を持つことで家族の一体感が保たれると思います。", likes: 11 },
+            { text: "反対します。姓の統一が社会の安定に寄与します。", likes: 7 },
+            { text: "再考が必要です。伝統を守るべきです。", likes: 4 }
+        ];
+
+        // コメント表示関数
+        function displayComments(comments, elementId) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = ''; // 既存のコメントをクリア
+            comments.sort((a, b) => b.likes - a.likes);
+            comments.forEach(comment => {
+                const div = document.createElement('div');
+                div.className = 'comment';
+                div.innerHTML = `
+                    ${comment.text} <span class="likes">👍 ${comment.likes}</span>
+                    <div class="comment-details">詳細なコメント: "${comment.text}" に関する追加情報です。</div>
+                `;
+                div.onclick = () => {
+                    const details = div.querySelector('.comment-details');
+                    details.style.display = details.style.display === 'block' ? 'none' : 'block';
+                };
+                container.appendChild(div);
+            });
+        }
+
+        displayComments(yesComments, 'yes-comments');
+        displayComments(noComments, 'no-comments');
+    </script>
+</body>
+</html>

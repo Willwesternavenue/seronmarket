@@ -1,157 +1,226 @@
-// 共通のログアウト関数
-function logout() {
-    fetch('/logout')
-        .then(response => {
-            if (response.redirected) {
-                window.location.href = response.url;
-            } else {
-                window.location.href = '/login';
-            }
-        })
-        .catch(err => {
-            console.error('Logout error:', err);
-            alert('ログアウトに失敗しました。');
-        });
-}
-/**
- * ユーザー情報を取得して表示
- */
-function fetchUserInfo() {
+// public/js/scripts.js
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ユーザー情報を取得して表示
     fetch('/api/user')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(user => {
-            setElementText('username', user.username || '不明');
-            const adminCheckbox = document.getElementById('is-admin-checkbox');
-            if (adminCheckbox) {
-                adminCheckbox.checked = user.isAdmin || false;
-            }
+        .then(handleFetchResponse)
+        .then(data => {
+            document.getElementById('username').textContent = data.username;
+            document.getElementById('is-admin-checkbox').checked = data.isAdmin;
         })
         .catch(err => {
             console.error('Error fetching user info:', err);
             alert('ユーザー情報の取得に失敗しました。');
         });
-}
 
-/**
- * イシュー作成フォームの初期化
- */
-let isCreateIssueFormInitialized = false; // 初期化済みフラグ
-
-function initializeCreateIssueForm() {
-    if (isCreateIssueFormInitialized) {
-        console.warn("イシュー作成フォームは既に初期化されています。");
-        return;
-    }
-
+    // イシュー作成フォームの送信を処理
     const createIssueForm = document.getElementById('create-issue-form');
-    if (!createIssueForm) {
-        console.error("イシュー作成フォームが見つかりませんでした。");
-        return;
-    }
-
-    const submitButton = createIssueForm.querySelector('button[type="submit"]');
-
-    createIssueForm.addEventListener('submit', async (event) => {
+    createIssueForm.addEventListener('submit', (event) => {
         event.preventDefault();
         
-        const headline = document.getElementById('headline')?.value.trim();
-        const description = document.getElementById('description')?.value.trim();
-        const tag = document.getElementById('tag')?.value.trim();
+        const headline = document.getElementById('headline').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const tag = document.getElementById('tag').value;
+        const isFeatured = document.getElementById('isFeatured').checked;
 
         if (!headline || !description || !tag) {
             alert('すべてのフィールドを入力してください。');
             return;
         }
 
-        // ボタンを無効化して多重送信を防止
-        submitButton.disabled = true;
+        const issueData = { headline, description, tag, isFeatured };
 
-        try {
-            const response = await fetch('/api/issues', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ headline, description, tag })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'イシュー作成に失敗しました');
-            }
-
-            const data = await response.json();
-            alert('イシューが作成されました！');
+        fetch('/api/issues', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(issueData)
+        })
+        .then(handleFetchResponse)
+        .then(data => {
+            alert('イシューが正常に作成されました。');
             createIssueForm.reset();
-            console.log(data); // デバッグ用
-        } catch (err) {
+            // 必要に応じてイシュー一覧を再取得・更新
+            refreshIssues();
+        })
+        .catch(err => {
             console.error('Error creating issue:', err);
             alert(`イシューの作成に失敗しました: ${err.message}`);
-        } finally {
-            // ボタンを再び有効化
-            submitButton.disabled = false;
+        });
+    });
+
+    // スタンス投稿フォームの送信を処理
+    const postStanceForm = document.getElementById('post-stance-form');
+    postStanceForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const issueId = document.getElementById('issue').value;
+        const stance = document.getElementById('stance').value;
+        const comment = document.getElementById('comment').value.trim();
+
+        if (!issueId || !stance) {
+            alert('イシューとスタンスを選択してください。');
+            return;
         }
+
+        const stanceData = { issue_id: issueId, stance, comment: comment || null };
+
+        fetch('/api/stances', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(stanceData)
+        })
+        .then(handleFetchResponse)
+        .then(data => {
+            alert('スタンスが正常に投稿されました。');
+            postStanceForm.reset();
+            // 必要に応じてイシュー一覧を再取得・更新
+            refreshIssues();
+        })
+        .catch(err => {
+            console.error('Error posting stance:', err);
+            alert(`スタンスの投稿に失敗しました: ${err.message}`);
+        });
     });
 
-    isCreateIssueFormInitialized = true; // 初期化済みフラグを設定
-}
-
-
-// DOMが読み込まれた後の処理
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.body.classList.contains('top-page')) {
-        displayIssues('/api/featured_issues', 'featured-issues', createIssueCard); // フィーチャーイシュー
-        displayIssues('/api/issues_with_votes', 'existingIssues', createIssueCard); // その他のイシュー
+    // イシュー一覧を再取得・更新する関数
+    function refreshIssues() {
+        // フィーチャーイシューとその他のイシューをそれぞれ再取得
+        displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
+        displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard);
     }
-    fetchUserInfo(); // ユーザー情報を取得して表示
-    displayIssues('/api/featured_issues', 'featured-issues', createIssueCard); // フィーチャーイシュー
-    displayIssues('/api/issues_with_votes', 'existingIssues', createIssueCard); // その他のイシュー
-    initializeStanceForm(); // スタンス投稿フォームの初期化
+
+    // 初回ロード時にイシュー一覧を取得
+    refreshIssues();
 });
-    // プリセットタグのリスト
-    const presetTags = [
-        '政治', '社会', '経済', '外交', '税金', '少子高齢化', '医療福祉', 'ビジネス'
-    ];
-
-    // タグドロップダウンを初期化
-    const tagDropdown = document.getElementById('tag');
-    presetTags.forEach(tag => {
-        const option = document.createElement('option');
-        option.value = tag;
-        option.textContent = tag;
-        tagDropdown.appendChild(option);
-    });
-
 
 /**
- * プリセットタグのリストを初期化
+ * APIレスポンスを処理
+ * @param {Response} response - Fetch APIレスポンス
+ * @returns {Promise<Object>}
  */
-function initializeTagDropdown() {
-    const presetTags = [
-        '政治', '社会', '経済', '外交', '税金', '少子高齢化', '医療福祉', 'ビジネス'
-    ];
+function handleFetchResponse(response) {
+    if (!response.ok) {
+        return response.json().then(err => {
+            throw new Error(err.error || 'Unknown error');
+        });
+    }
+    return response.json();
+}
 
-    const tagDropdown = document.getElementById('tag');
-    if (!tagDropdown) {
-        console.error("タグドロップダウンが見つかりませんでした。");
-        return;
+/**
+ * ボタンからアクションを取得
+ * @param {HTMLElement} button - クリックされたボタン
+ * @returns {string|null} - アクション名（like, favorite, comment, stance）またはnull
+ */
+function getActionFromButton(button) {
+    if (button.classList.contains('like-button')) return 'like';
+    if (button.classList.contains('favorite-button')) return 'favorite';
+    if (button.classList.contains('comment-button')) return 'comment';
+    if (button.classList.contains('stance-button')) return 'stance';
+    return null;
+}
+
+/**
+ * アクションボタンのクリックを処理
+ * @param {string} action - アクションの種類（like, favorite, comment, stance）
+ * @param {number} issueId - イシューのID
+ * @param {HTMLElement} button - クリックされたボタン
+ */
+function handleActionButtonClick(action, issueId, button) {
+    let endpoint = '';
+    let method = 'POST';
+    let body = {};
+
+    switch(action) {
+        case 'like':
+            endpoint = `/api/issues/${issueId}/like`;
+            break;
+        case 'favorite':
+            // トグル機能を実装する場合は、現在の状態を確認して 'add' または 'remove' を設定
+            const currentFavorites = parseInt(button.textContent.match(/\((\d+)\)/)[1], 10);
+            const actionType = currentFavorites > 0 ? 'remove' : 'add';
+            endpoint = `/api/issues/${issueId}/favorite`;
+            body = { action: actionType };
+            break;
+        case 'comment':
+            // コメントを追加するために、コメント内容を取得するプロンプトを表示します。
+            const userComment = prompt('コメントを入力してください:');
+            if (!userComment || userComment.trim() === '') {
+                alert('コメントは空にできません。');
+                return;
+            }
+            endpoint = `/api/issues/${issueId}/comment`;
+            body = { comment: userComment.trim() };
+            break;
+        case 'stance':
+            // スタンスを選択するプロンプトを表示します。
+            const userStance = prompt('スタンスを選択してください (YES, NO, 様子見):');
+            if (!['YES', 'NO', '様子見'].includes(userStance)) {
+                alert('有効なスタンスを選択してください。');
+                return;
+            }
+            // コメントが必要な場合は追加で取得します。
+            const stanceComment = prompt('スタンスに関するコメントを入力してください (任意):');
+            endpoint = `/api/stances`;
+            body = { issue_id: issueId, stance: userStance, comment: stanceComment ? stanceComment.trim() : null };
+            break;
+        default:
+            console.error('Unknown action:', action);
+            return;
     }
 
-    presetTags.forEach(tag => {
-        const option = document.createElement('option');
-        option.value = tag;
-        option.textContent = tag;
-        tagDropdown.appendChild(option);
+    fetch(endpoint, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: Object.keys(body).length > 0 ? JSON.stringify(body) : null
+    })
+    .then(handleFetchResponse)
+    .then(data => {
+        alert(`${getActionName(action)}しました！`);
+        updateButtonCount(button, data[`${action}s`] || 0); // 例: likes, favorites, comments, stances
+    })
+    .catch(err => {
+        console.error(`Error performing ${action} on issue ${issueId}:`, err);
+        alert(`${getActionName(action)}に失敗しました: ${err.message}`);
     });
 }
+
+/**
+ * アクション名を取得
+ * @param {string} action - アクションの種類
+ * @returns {string} - 表示用のアクション名
+ */
+function getActionName(action) {
+    switch(action) {
+        case 'stance': return 'スタンス';
+        case 'like': return 'いいね';
+        case 'favorite': return 'お気に入り';
+        case 'comment': return 'コメント';
+        default: return 'アクション';
+    }
+}
+
+/**
+ * ボタンのカウントを更新
+ * @param {HTMLElement} button - 更新するボタン
+ * @param {number} newCount - 新しいカウント値
+ */
+function updateButtonCount(button, newCount) {
+    const actionText = button.textContent.split('(')[0].trim();
+    button.innerHTML = `${button.querySelector('.icon').outerHTML}${actionText} (${newCount})`;
+}
+
 /**
  * APIからデータを取得して表示
- * @param {string} url - APIのURL
+ * @param {string} url - APIエンドポイントのURL
  * @param {string} containerId - 表示先のコンテナID
- * @param {function} cardCreator - カードを作成する関数
+ * @param {function} cardCreator - カードを生成する関数
  */
 function displayIssues(url, containerId, cardCreator) {
     const container = document.getElementById(containerId);
@@ -161,12 +230,7 @@ function displayIssues(url, containerId, cardCreator) {
     }
 
     fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        })
+        .then(handleFetchResponse)
         .then(data => {
             if (!Array.isArray(data)) {
                 console.error(`APIから予期しないデータ形式が返されました: ${data}`);
@@ -174,6 +238,7 @@ function displayIssues(url, containerId, cardCreator) {
                 return;
             }
 
+            // イシューを表示
             container.innerHTML = data.length
                 ? data.map(cardCreator).join('')
                 : '<p>現在データはありません。</p>';
@@ -185,241 +250,116 @@ function displayIssues(url, containerId, cardCreator) {
 }
 
 /**
- * イシューカードを生成
+ * フィーチャーイシューカードを生成
  * @param {Object} issue - イシュー情報
  * @returns {string} - HTML文字列
  */
+function createFeaturedIssueCard(issue) {
+    const yesPercent = sanitizePercentage(issue.yes_percent);
+    const noPercent = sanitizePercentage(issue.no_percent);
+    const favoritesCount = issue.favorites || 0;
 
-function createIssueCard(issue) {
-    const cardClass = issue.is_featured ? 'featured-issue-card' : 'other-issue-card';
     return `
-        <div class="${cardClass}">
-            <h4>${sanitizeHTML(issue.headline)}</h4>
-            <p>${sanitizeHTML(issue.description)}</p>
-            <p>カテゴリ: ${sanitizeHTML(issue.tag)}</p>
+        <div class="featured-issue-card">
+            <span class="issue-category">${sanitizeHTML(issue.tag)}</span>
+            <span class="trending-icon"><i class="fas fa-fire"></i></span>
+            <h4 class="issue-title">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
             <div class="vote-bar-container">
-                <div class="vote-bar vote-bar-yes" style="width: ${sanitizePercentage(issue.yes_percent)}%;"></div>
-                <div class="vote-bar vote-bar-no" style="width: ${sanitizePercentage(issue.no_percent)}%;"></div>
+                <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>
+                <div class="vote-bar-no" style="width: ${noPercent}%;"></div>
             </div>
             <div class="vote-counts">
-                <span>YES: ${sanitizePercentage(issue.yes_percent)}%</span>
-                <span>NO: ${sanitizePercentage(issue.no_percent)}%</span>
+                <span>YES ${yesPercent}%</span>
+                <span>NO ${noPercent}%</span>
             </div>
-            <button class="like-button" data-issue-id="${issue.id}" onclick="likeIssue(${issue.id})">
-                関心あり (${issue.likes || 0})
-            </button>
+            <div class="action-buttons">
+                <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
+                    <i class="fas fa-arrow-up icon"></i> (${issue.stances || 0})
+                </button>
+                <button class="like-button" data-issue-id="${issue.id}" tabindex="0" aria-label="いいね ボタン">
+                    <i class="fas fa-heart icon"></i> (${issue.likes || 0})
+                </button>
+                <button class="favorite-button" data-issue-id="${issue.id}" tabindex="0" aria-label="お気に入り ボタン">
+                    <i class="fas fa-star icon"></i> (${favoritesCount})
+                </button>
+                <button class="comment-button" data-issue-id="${issue.id}" tabindex="0" aria-label="コメント ボタン">
+                    <i class="fas fa-comment icon"></i> (${issue.comments || 0})
+                </button>
+            </div>
         </div>
     `;
 }
 
-// フィーチャーイシューの表示
-function displayFeaturedIssues() {
-    const container = document.getElementById('featured-issues');
-    if (!container) {
-        console.error('フィーチャーイシューのコンテナが見つかりませんでした。');
-        return;
-    }
+/**
+ * その他のイシューカードを生成
+ * @param {Object} issue - イシュー情報
+ * @returns {string} - HTML文字列
+ */
+function createOtherIssueCard(issue) {
+    const yesPercent = sanitizePercentage(issue.yes_percent);
+    const noPercent = sanitizePercentage(issue.no_percent);
+    const favoritesCount = issue.favorites || 0;
 
-    fetch('/api/featured_issues')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (!data.length) {
-                container.innerHTML = '<p>現在フィーチャーイシューはありません。</p>';
-                return;
-            }
-            container.innerHTML = data.map(createFeaturedIssueCard).join('');
-        })
-        .catch(err => {
-            console.error('フィーチャーイシューの取得中にエラーが発生しました:', err);
-            container.innerHTML = '<p>フィーチャーイシューの取得に失敗しました。</p>';
-        });
+    return `
+        <div class="other-issue-card">
+            <span class="issue-category">${sanitizeHTML(issue.tag)}</span>
+            <span class="trending-icon"><i class="fas fa-fire"></i></span>
+            <h4 class="issue-title">${sanitizeHTML(truncateText(issue.headline, 30))}</h4>
+            
+            <div class="vote-bar-container">
+                <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>
+                <div class="vote-bar-no" style="width: ${noPercent}%;"></div>
+            </div>
+            <div class="vote-counts">
+                <span>YES ${yesPercent}%</span>
+                <span>NO ${noPercent}%</span>
+            </div>
+            <div class="action-buttons">
+                <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
+                    <i class="fas fa-arrow-up icon"></i> (${issue.stances || 0})
+                </button>    
+                <button class="like-button" data-issue-id="${issue.id}" tabindex="0" aria-label="いいね ボタン">
+                    <i class="fas fa-heart icon"></i> (${issue.likes || 0})
+                </button>
+                <button class="favorite-button" data-issue-id="${issue.id}" tabindex="0" aria-label="お気に入り ボタン">
+                    <i class="fas fa-star icon"></i> (${favoritesCount})
+                </button>
+                <button class="comment-button" data-issue-id="${issue.id}" tabindex="0" aria-label="コメント ボタン">
+                    <i class="fas fa-comment icon"></i> (${issue.comments || 0})
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 /**
  * サニタイズ関数
+ * @param {string} str - サニタイズする文字列
+ * @returns {string}
  */
 function sanitizeHTML(str) {
     const tempDiv = document.createElement('div');
     tempDiv.textContent = str || '';
     return tempDiv.innerHTML;
 }
+
+/**
+ * パーセンテージをサニタイズ
+ * @param {number|string} percent - サニタイズするパーセンテージ
+ * @returns {string}
+ */
 function sanitizePercentage(percent) {
     const parsedPercent = parseFloat(percent);
     return isNaN(parsedPercent) || parsedPercent < 0 ? '0' : parsedPercent.toFixed(1);
 }
 
 /**
- * APIからイシューを取得して表示
+ * テキストを指定された長さに制限
+ * @param {string} text - 元のテキスト
+ * @param {number} maxLength - 最大文字数
+ * @returns {string} - 制限後のテキスト
  */
-
-const issueForm = document.getElementById('create-issue-form');
-if (issueForm) {
-    issueForm.addEventListener('submit', (event) => {
-        event.preventDefault(); // デフォルトの送信を防止
-
-        const headline = document.getElementById('headline').value;
-        const description = document.getElementById('description').value;
-        const tag = document.getElementById('tag').value;
-        const isFeatured = document.getElementById('isFeatured').checked ? 1 : 0;
-
-        // サーバーにリクエストを送信
-        fetch('/api/issues', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ headline, description, tag, is_featured: isFeatured }),
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(err.error || 'Unknown error');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            alert('イシューが作成されました！');
-            console.log(data);
-            issueForm.reset(); // フォームをリセット
-        })
-        .catch(err => {
-            console.error('Error creating issue:', err);
-            alert(`イシューの作成に失敗しました: ${err.message}`);
-        });
-    });
-}
-
-/**
- * スタンス投稿フォームを初期化
- */
-function initializeStanceForm() {
-    const stanceForm = document.getElementById('post-stance-form');
-    const issueDropdown = document.getElementById('issue');
-
-    if (!stanceForm || !issueDropdown) {
-        console.error('Stance form or issue dropdown not found.');
-        return;
-    }
-
-    // イシューの選択肢を取得して追加
-    fetch('/api/issues')
-        .then(handleFetchResponse)
-        .then(issues => {
-            if (!issues.length) {
-                console.warn('No issues found.');
-                issueDropdown.innerHTML = '<option disabled>利用可能なイシューがありません</option>';
-                return;
-            }
-
-            issues.forEach(issue => {
-                const option = document.createElement('option');
-                option.value = issue.id;
-                option.textContent = issue.headline;
-                issueDropdown.appendChild(option);
-            });
-        })
-        .catch(err => {
-            console.error('Error fetching issues:', err);
-            alert('イシューの取得に失敗しました。');
-        });
-
-    // スタンス投稿フォームの送信処理
-    stanceForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-    
-        const issueId = document.getElementById('issue').value;
-        const stance = document.getElementById('stance').value;
-        const comment = document.getElementById('comment').value;
-    
-        if (!issueId || !stance) {
-            alert('イシューとスタンスを選択してください。');
-            return;
-        }
-    
-        fetch('/api/stances', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ issue_id: issueId, stance, comment })
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(err.error || 'An unknown error occurred');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            alert('スタンスが投稿されました！');
-            stanceForm.reset();
-        })
-        .catch(err => {
-            console.error('Error posting stance:', err);
-            alert(`スタンスの投稿に失敗しました: ${err.message}`);
-        });
-    });
-    
-}
-
-function handleFetchResponse(response) {
-    if (!response.ok) {
-        return response.json().then(err => {
-            throw new Error(err.error || '不明なエラーが発生しました。');
-        });
-    }
-    return response.json();
-}
-function likeIssue(issueId) {
-    fetch(`/api/issues/${issueId}/like`, {
-        method: 'POST',
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.text().then(text => {
-                throw new Error(`HTTP Error: ${response.status}. Response: ${text}`);
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        alert('いいねしました！');
-        updateLikeCount(issueId, data.likes);
-    })
-    .catch(err => {
-        console.error('Error liking issue:', err);
-        alert(`いいねに失敗しました: ${err.message}`);
-    });
-}
-
-
-function updateLikeCount(issueId, newCount) {
-    const button = document.querySelector(`.like-button[data-issue-id="${issueId}"]`);
-    if (button) {
-        button.textContent = `いいね (${newCount})`;
-    }
-}
-
-function setElementText(elementId, text) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.textContent = text;
-    }
-}
-if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.action === "asyncTask") {
-            performAsyncTask().then((result) => {
-                sendResponse({ success: true, data: result });
-            }).catch((error) => {
-                sendResponse({ success: false, error: error.message });
-            });
-            return true; // 非同期応答を期待していることを示す
-        }
-    });
-} else {
-    console.warn("chrome.runtime.onMessage is not supported in this environment.");
+function truncateText(text, maxLength) {
+    if (!text || text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
 }

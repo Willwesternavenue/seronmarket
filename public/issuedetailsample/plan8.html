@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>イシュー詳細 - デザイン案3-3</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #eceff1;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 950px;
+            margin: auto;
+            background-color: #ffffff;
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .category {
+            background-color: #78909C;
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        .featured {
+            background-color: #D32F2F;
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+        }
+        .title {
+            font-size: 28px;
+            color: #333333;
+            margin-top: 10px;
+        }
+        .charts {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        .chart-wrapper {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 20px;
+        }
+        .chart-wrapper canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .center-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            font-weight: bold;
+            color: #555555;
+        }
+        .comments {
+            margin-top: 50px;
+        }
+        .comments h2 {
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            color: #333333;
+        }
+        .comment-card {
+            background-color: #fafafa;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        .comment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .likes {
+            color: #757575;
+        }
+        .comment-details {
+            display: none;
+            color: #555555;
+            margin-top: 10px;
+        }
+    </style>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <span class="category">テクノロジー</span>
+                <span class="featured">Featured</span>
+            </div>
+            <h1 class="title">イシュー詳細: サンプルイシュー</h1>
+        </div>
+        <div class="charts">
+            <div class="chart-wrapper">
+                <canvas id="userAiChart"></canvas>
+                <div class="center-label">ユーザー vs AI</div>
+            </div>
+        </div>
+        <div class="comments">
+            <h2>YES コメント</h2>
+            <div id="yes-comments">
+                <!-- YESコメントがここに展開 -->
+            </div>
+            <h2>NO コメント</h2>
+            <div id="no-comments">
+                <!-- NOコメントがここに展開 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // データ設定
+        const combinedData = {
+            labels: ['YES', 'NO'],
+            datasets: [
+                {
+                    label: 'ユーザー',
+                    data: [50, 50],
+                    backgroundColor: ['#29B6F6', '#FF7043'],
+                    hoverBackgroundColor: ['#4FC3F7', '#FF8A65']
+                },
+                {
+                    label: 'AI',
+                    data: [55, 45],
+                    backgroundColor: ['#66BB6A', '#FFA726'],
+                    hoverBackgroundColor: ['#81C784', '#FFB74D']
+                }
+            ]
+        };
+
+        // チャート描画
+        const ctx = document.getElementById('userAiChart').getContext('2d');
+        const userAiChart = new Chart(ctx, {
+            type: 'pie',
+            data: combinedData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        enabled: true
+                    }
+                }
+            }
+        });
+
+        // コメントデータ
+        const yesComments = [
+            { text: "この提案は非常に有益だと思います。", likes: 20 },
+            { text: "全面的に賛成です！", likes: 16 },
+            { text: "良い方向性だと思います。", likes: 10 }
+        ];
+
+        const noComments = [
+            { text: "いくつかの懸念点があります。", likes: 13 },
+            { text: "反対します。理由があります。", likes: 8 },
+            { text: "再検討が必要です。", likes: 5 }
+        ];
+
+        // コメント表示関数
+        function displayComments(comments, elementId) {
+            const container = document.getElementById(elementId);
+            comments.sort((a, b) => b.likes - a.likes);
+            comments.forEach(comment => {
+                const card = document.createElement('div');
+                card.className = 'comment-card';
+                card.innerHTML = `
+                    <div class="comment-header">
+                        <span>${comment.text}</span>
+                        <span class="likes">👍 ${comment.likes}</span>
+                    </div>
+                    <div class="comment-details">詳細なコメント: "${comment.text}" に関する追加情報です。</div>
+                `;
+                card.onclick = () => {
+                    const details = card.querySelector('.comment-details');
+                    details.style.display = details.style.display === 'block' ? 'none' : 'block';
+                };
+                container.appendChild(card);
+            });
+        }
+
+        displayComments(yesComments, 'yes-comments');
+        displayComments(noComments, 'no-comments');
+    </script>
+</body>
+</html>

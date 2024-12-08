@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>プロフィールモーダル - クラシッククリーンスタイル</title>
+    <style>
+        /* モーダルの背景 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        /* モーダルコンテンツ */
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        /* クローズボタン */
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 20px;
+            text-decoration: none;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        /* プロフィール画像 */
+        .profile-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+        }
+
+        /* リンク */
+        .modal a {
+            color: #1a0dab;
+            text-decoration: none;
+        }
+
+        .modal a:hover {
+            text-decoration: underline;
+        }
+
+        /* 情報リスト */
+        .info {
+            list-style: none;
+            padding: 0;
+            margin-top: 10px;
+            text-align: left;
+        }
+
+        .info li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- トリガー -->
+<a href="#" id="openModal">作成者名</a>
+
+<!-- モーダル -->
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <a href="#" class="close" id="closeModal">&times;</a>
+        <img src="profile.jpg" alt="プロフィール画像" class="profile-img">
+        <h2>ID名: User123</h2>
+        <p><a href="https://youtube.com/yourchannel" target="_blank">YouTube チャンネル</a></p>
+        <ul class="info">
+            <li>作成したイシュー数: 42</li>
+            <li>保有ゴールドコイン数: 150</li>
+        </ul>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+    const openModal = document.getElementById('openModal');
+    const modal = document.getElementById('myModal');
+    const closeModal = document.getElementById('closeModal');
+
+    openModal.onclick = function(e) {
+        e.preventDefault();
+        modal.style.display = 'block';
+    }
+
+    closeModal.onclick = function(e) {
+        e.preventDefault();
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>

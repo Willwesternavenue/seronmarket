@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>プロフィールモーダル - ダークモードスタイル</title>
+    <style>
+        /* モーダルの背景 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+        }
+
+        /* モーダルコンテンツ */
+        .modal-content {
+            background-color: #2c2c2c;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 350px;
+            position: relative;
+            color: #fff;
+            text-align: center;
+        }
+
+        /* クローズボタン */
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 25px;
+            text-decoration: none;
+            color: #bbb;
+        }
+
+        .close:hover {
+            color: #fff;
+        }
+
+        /* プロフィール画像 */
+        .profile-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 3px solid #555;
+        }
+
+        /* リンク */
+        .modal a {
+            color: #ff9800;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .modal a:hover {
+            text-decoration: underline;
+        }
+
+        /* 情報リスト */
+        .info {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .info li {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .info li span {
+            font-weight: bold;
+        }
+
+        /* ゴールドコインアイコン */
+        .coin {
+            color: #ff9800;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- トリガー -->
+<a href="#" id="openModal">作成者名</a>
+
+<!-- モーダル -->
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <a href="#" class="close" id="closeModal">&times;</a>
+        <img src="profile.jpg" alt="プロフィール画像" class="profile-img">
+        <h2>User123</h2>
+        <p><a href="https://youtube.com/yourchannel" target="_blank">YouTube</a></p>
+        <ul class="info">
+            <li>作成したイシュー数: <span>42</span></li>
+            <li><span class="coin">&#9733;</span> 保有ゴールドコイン数: <span>150</span></li>
+        </ul>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+    const openModal = document.getElementById('openModal');
+    const modal = document.getElementById('myModal');
+    const closeModal = document.getElementById('closeModal');
+
+    openModal.onclick = function(e) {
+        e.preventDefault();
+        modal.style.display = 'block';
+    }
+
+    closeModal.onclick = function(e) {
+        e.preventDefault();
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>

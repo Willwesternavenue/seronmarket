@@ -1,6 +1,6 @@
 // server.js
 
-require('dotenv').config(); // 環境変数の読み込み（必要に応じて）
+require('dotenv').config(); // 環境変数の読み込み
 
 const express = require('express');
 const session = require('express-session');
@@ -8,9 +8,7 @@ const bcrypt = require('bcrypt');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const cors = require('cors');
-
-
-const helmet = require('helmet'); // セキュリティ強化用（オプション）
+const helmet = require('helmet');
 
 const app = express();
 const dbPath = path.join(__dirname, 'db', 'database.sqlite');
@@ -24,8 +22,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 // ミドルウェア設定
-app.use(cors()); // CORSの許可（オプション）
-app.use(helmet()); // セキュリティヘッダーの設定（オプション）
+app.use(cors()); // 必要に応じてCORSを有効化
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(session({
@@ -38,6 +35,56 @@ app.use(session({
         maxAge: 1000 * 60 * 60 // 1時間
     }
 }));
+
+// HelmetとCSPの統合設定
+if (process.env.NODE_ENV === 'production') {
+    app.use(
+        helmet({
+            contentSecurityPolicy: {
+                directives: {
+                    defaultSrc: ["'self'"],
+                    scriptSrc: ["'self'"],
+                    styleSrc: ["'self'", 'https://cdn.jsdelivr.net'], // jsDelivrのベースURLを許可
+                    imgSrc: ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
+                    connectSrc: ["'self'"],
+                    fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+                    objectSrc: ["'none'"],
+                    baseUri: ["'self'"],
+                    formAction: ["'self'"],
+                    frameAncestors: ["'self'"],
+                    scriptSrcAttr: ["'none'"],
+                    upgradeInsecureRequests: true // 本番環境のみ有効化
+                },
+            },
+            // HSTSを本番環境のみ有効化
+            hsts: {
+                maxAge: 31536000, // 1年
+                includeSubDomains: true,
+                preload: true
+            }
+        })
+    );
+} else {
+    app.use(
+        helmet({
+            contentSecurityPolicy: false, // CSPを無効化
+            hsts: false // HSTSを無効化
+        })
+    );
+}
+// CSPヘッダーをログに出力するミドルウェア
+app.use((req, res, next) => {
+    res.on('finish', () => {
+        const csp = res.getHeader('Content-Security-Policy');
+        if (csp) {
+            console.log('CSP Header:', csp);
+        } else {
+            console.log('CSP Header is not set.');
+        }
+    });
+    next();
+});
+
 
 // 認証ミドルウェア
 function isAuthenticated(req, res, next) {
@@ -59,12 +106,11 @@ function isAdmin(req, res, next) {
 // 静的ファイルの提供
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ルート
+// ルート設定
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// カスタムルートの追加
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
@@ -81,7 +127,7 @@ app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// ログイン
+// ログイン処理
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
@@ -112,7 +158,7 @@ app.post('/login', (req, res) => {
     });
 });
 
-// 登録
+// 登録処理
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -145,22 +191,37 @@ app.post('/register', (req, res) => {
     });
 });
 
-// ログアウト
+// ログアウト処理
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             console.error('Session destroy error:', err);
             return res.status(500).json({ error: 'Logout failed' });
         }
-        res.redirect('/login');
+        res.redirect('/login'); // 相対パスを使用
+        console.log('Current NODE_ENV:', process.env.NODE_ENV);
+
     });
 });
 
-// APIエンドポイント
+// サーバー起動
+const PORT = process.env.PORT || 3000;
+const HOST = '127.0.0.1'; // ホストを127.0.0.1に設定
+
+app.listen(PORT, () => {
+    console.log(`Server is running on http://${HOST}:${PORT}`);
+});
+
+
+// 正しい /api/issues_with_votes エンドポイントの定義
 app.get('/api/issues_with_votes', (req, res) => {
     const sql = `
         SELECT 
-            issues.*, 
+            issues.id,
+            issues.headline,
+            issues.description,
+            issues.tag,
+            issues.likes, -- likes フィールドを含める
             COUNT(CASE WHEN stances.stance = 'YES' THEN 1 END) as yes_count,
             COUNT(CASE WHEN stances.stance = 'NO' THEN 1 END) as no_count
         FROM 
@@ -196,64 +257,6 @@ app.get('/api/issues_with_votes', (req, res) => {
     });
 });
 
-
-
-
-
-// ユーザー情報の取得
-app.get('/api/user', isAuthenticated, (req, res) => {
-    const sql = 'SELECT id, username, is_admin FROM users WHERE id = ?';
-    db.get(sql, [req.session.userId], (err, user) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        res.json({
-            userId: user.id,
-            username: user.username,
-            isAdmin: user.is_admin === 1
-        });
-    });
-});
-
-// フィーチャーイシューの取得
-app.get('/api/issues_with_votes', (req, res) => {
-    const sql = `
-        SELECT 
-            issues.id,
-            issues.headline,
-            issues.description,
-            issues.tag,
-            COUNT(CASE WHEN stances.stance = 'YES' THEN 1 END) as yes_count,
-            COUNT(CASE WHEN stances.stance = 'NO' THEN 1 END) as no_count
-        FROM 
-            issues
-        LEFT JOIN 
-            stances ON issues.id = stances.issue_id
-        GROUP BY 
-            issues.id
-    `;
-
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            console.error('Database error:', err);
-            res.status(500).json({ error: 'Database error' });
-        } else {
-            const issues = rows.map(row => {
-                const totalVotes = (row.yes_count || 0) + (row.no_count || 0);
-                return {
-                    ...row,
-                    yes_percent: totalVotes > 0 ? ((row.yes_count / totalVotes) * 100).toFixed(1) : 0,
-                    no_percent: totalVotes > 0 ? ((row.no_count / totalVotes) * 100).toFixed(1) : 0,
-                };
-            });
-            res.json(issues);
-        }
-    });
-});
 app.get('/api/featured_issues', (req, res) => {
     const sql = `
         SELECT 
@@ -392,39 +395,36 @@ app.get('/api/issues', (req, res) => {
     });
 });
 
-
 // イシューの作成
 app.post('/api/issues', (req, res) => {
-    const { headline, description, tag } = req.body;
+    const { headline, description, tag, is_featured } = req.body;
 
     if (!headline || !description || !tag) {
-        return res.status(400).json({ error: 'All fields are required' });
+        return res.status(400).json({ error: 'すべてのフィールドが必要です。' });
     }
 
     const checkDuplicateSql = `SELECT id FROM issues WHERE headline = ?`;
     db.get(checkDuplicateSql, [headline], (err, row) => {
         if (err) {
             console.error('Database error:', err);
-            return res.status(500).json({ error: 'Database error' });
+            return res.status(500).json({ error: 'データベースエラー' });
         }
 
         if (row) {
-            return res.status(400).json({ error: 'Issue with the same headline already exists' });
+            return res.status(400).json({ error: '同じヘッドラインのイシューが既に存在します。' });
         }
 
-        const insertSql = `INSERT INTO issues (headline, description, tag) VALUES (?, ?, ?)`;
-        db.run(insertSql, [headline, description, tag], function (err) {
+        const insertSql = `INSERT INTO issues (headline, description, tag, is_featured) VALUES (?, ?, ?, ?)`;
+        db.run(insertSql, [headline, description, tag, is_featured ? 1 : 0], function (err) {
             if (err) {
                 console.error('Database insert error:', err);
-                return res.status(500).json({ error: 'Database insert error' });
+                return res.status(500).json({ error: 'イシューの作成に失敗しました。' });
             }
 
-            res.status(201).json({ id: this.lastID, message: 'Issue created successfully' });
+            res.status(201).json({ id: this.lastID, message: 'イシューが正常に作成されました。' });
         });
     });
 });
-
-
 // スタンスの投稿
 app.post('/api/stances', isAuthenticated, (req, res) => {
     const { issue_id, stance, comment } = req.body;
@@ -478,6 +478,124 @@ app.post('/api/stances', isAuthenticated, (req, res) => {
 });
 
 
+// テーブルの作成（Favorites）
+db.run(`
+    CREATE TABLE IF NOT EXISTS favorites (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        issue_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, issue_id),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (issue_id) REFERENCES issues(id)
+    )
+`, (err) => {
+    if (err) {
+        console.error('Error creating favorites table:', err);
+    } else {
+        console.log('Favorites table ensured');
+    }
+});
+// お気に入りを追加または削除するエンドポイント
+app.post('/api/issues/:id/favorite', isAuthenticated, (req, res) => {
+    const issueId = req.params.id;
+    const { action } = req.body;
+    const userId = req.session.userId;
+
+    if (!['add', 'remove'].includes(action)) {
+        return res.status(400).json({ error: 'Invalid action' });
+    }
+
+    if (action === 'add') {
+        const sql = `INSERT INTO favorites (user_id, issue_id) VALUES (?, ?)`;
+        db.run(sql, [userId, issueId], function(err) {
+            if (err) {
+                if (err.code === 'SQLITE_CONSTRAINT') {
+                    // 既にお気に入りに追加されている
+                    return res.status(400).json({ error: 'Issue already favorited' });
+                }
+                console.error('Database error:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            // お気に入り数をカウント
+            const countSql = `SELECT COUNT(*) as count FROM favorites WHERE issue_id = ?`;
+            db.get(countSql, [issueId], (err, row) => {
+                if (err) {
+                    console.error('Database error:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                res.json({ favorites: row.count });
+            });
+        });
+    } else if (action === 'remove') {
+        const sql = `DELETE FROM favorites WHERE user_id = ? AND issue_id = ?`;
+        db.run(sql, [userId, issueId], function(err) {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            if (this.changes === 0) {
+                return res.status(400).json({ error: 'Favorite not found' });
+            }
+            // お気に入り数をカウント
+            const countSql = `SELECT COUNT(*) as count FROM favorites WHERE issue_id = ?`;
+            db.get(countSql, [issueId], (err, row) => {
+                if (err) {
+                    console.error('Database error:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                res.json({ favorites: row.count });
+            });
+        });
+    }
+});
+// コメントを追加するエンドポイント
+app.post('/api/issues/:id/comment', isAuthenticated, (req, res) => {
+    const issueId = req.params.id;
+    const { comment } = req.body;
+    const userId = req.session.userId;
+
+    if (!comment || comment.trim() === '') {
+        return res.status(400).json({ error: 'Comment is required' });
+    }
+
+    const sql = `INSERT INTO comments (issue_id, user_id, comment) VALUES (?, ?, ?)`;
+    db.run(sql, [issueId, userId, comment.trim()], function(err) {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        // コメント数をカウント
+        const countSql = `SELECT COUNT(*) as count FROM comments WHERE issue_id = ?`;
+        db.get(countSql, [issueId], (err, row) => {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            res.json({ comments: row.count });
+        });
+    });
+});
+
+// テーブルの作成（Comments）
+db.run(`
+    CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        issue_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        comment TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (issue_id) REFERENCES issues(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+`, (err) => {
+    if (err) {
+        console.error('Error creating comments table:', err);
+    } else {
+        console.log('Comments table ensured');
+    }
+});
+
 // "いいね" を追加するエンドポイント
 app.post('/api/issues/:id/like', (req, res) => {
     const issueId = req.params.id;
@@ -497,11 +615,69 @@ app.post('/api/issues/:id/like', (req, res) => {
     });
 });
 
+app.get('/api/user', isAuthenticated, (req, res) => {
+    const sql = 'SELECT id, username, is_admin FROM users WHERE id = ?';
+    db.get(sql, [req.session.userId], (err, user) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.json({
+            userId: user.id,
+            username: user.username,
+            isAdmin: user.is_admin === 1
+        });
+    });
+});
 
+function isAdmin(req, res, next) {
+    if (req.session && req.session.isAdmin) {
+        next();
+    } else {
+        res.status(403).json({ error: 'Forbidden: Admins only' });
+    }
+}
+// server.js
 
+app.get('/api/admin/users', isAuthenticated, isAdmin, (req, res) => {
+    const sql = 'SELECT id, username, is_admin FROM users';
+    db.all(sql, [], (err, users) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(users);
+    });
+});
+// 既存のコードに続けて以下を追加
 
-// サーバー起動
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+// お気に入りを追加または削除するエンドポイント
+app.post('/api/issues/:id/favorite', isAuthenticated, (req, res) => {
+    // 上記のコードをここに追加
+});
+
+// コメントを追加するエンドポイント
+app.post('/api/issues/:id/comment', isAuthenticated, (req, res) => {
+    // 上記のコードをここに追加
+});
+// server.js
+
+// カテゴリを取得するエンドポイント（静的リスト）
+app.get('/api/categories', (req, res) => {
+    const categories = [
+        { id: 1, name: '政治' },
+        { id: 2, name: '社会' },
+        { id: 3, name: '経済' },
+        { id: 4, name: '外交' },
+        { id: 5, name: '国際' },
+        { id: 6, name: '税金' },
+        { id: 7, name: 'ビジネス' },
+        { id: 8, name: '少子高齢化' },
+        { id: 9, name: '医療福祉' },
+        // 必要に応じて追加
+    ];
+    res.json(categories);
 });

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>イシュー詳細 - デザイン案3</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 90%; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+        .meter { width: 200px; height: 20px; background-color: #ccc; position: relative; }
+        .meter-fill { height: 100%; background-color: #4CAF50; width: 65%; }
+        .comments-container { display: flex; justify-content: space-around; margin-top: 30px; }
+        .comment-section { width: 45%; }
+        .comment-card { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .comment-card .likes { color: #888; float: right; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>イシュー詳細: サンプルイシュー</h1>
+            <div class="meter">
+                <div class="meter-fill"></div>
+            </div>
+            <span>AIジャッジ: 65% YES</span>
+        </div>
+        <div class="comments-container">
+            <div class="comment-section">
+                <h2>YES コメント</h2>
+                <div id="yes-comments">
+                    <!-- YESコメントカード -->
+                </div>
+            </div>
+            <div class="comment-section">
+                <h2>NO コメント</h2>
+                <div id="no-comments">
+                    <!-- NOコメントカード -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const yesComments = [
+            { text: "これは素晴らしい提案です。", likes: 10 },
+            { text: "賛成です！", likes: 8 },
+            { text: "支持します。", likes: 5 }
+        ];
+
+        const noComments = [
+            { text: "懸念があります。", likes: 7 },
+            { text: "反対意見です。", likes: 4 },
+            { text: "再考が必要です。", likes: 2 }
+        ];
+
+        function displayComments(comments, elementId) {
+            const container = document.getElementById(elementId);
+            comments.sort((a, b) => b.likes - a.likes);
+            comments.forEach(comment => {
+                const card = document.createElement('div');
+                card.className = 'comment-card';
+                card.innerHTML = `${comment.text} <span class="likes">👍 ${comment.likes}</span>`;
+                container.appendChild(card);
+            });
+        }
+
+        displayComments(yesComments, 'yes-comments');
+        displayComments(noComments, 'no-comments');
+    </script>
+</body>
+</html>

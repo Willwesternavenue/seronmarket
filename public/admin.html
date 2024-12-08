@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <title>管理者ページ - SERON</title>
     <link rel="stylesheet" href="css/styles.css"> <!-- 外部CSSファイル -->
+    <!-- Font AwesomeのCDNリンク（jsDelivrを使用） -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
 <body>
-    <nav class="navbar navbar-admin">
+    <nav class="navbar navbar-mypage">
         <div class="navbar-brand">
             <a href="/" class="navbar-title">SERON - 管理者画面</a>
         </div>
@@ -23,56 +25,63 @@
     </div>
 
     <div class="section">
-        <h3>イシューの作成</h3>
-        <form id="create-issue-form" class="create-issue-form">
-            <div class="form-group">
-                <label for="headline">ヘッドライン:</label>
-                <input type="text" id="headline" name="headline" class="form-control" required placeholder="ヘッドラインを入力">
-            </div>
-            <div class="form-group">
-                <label for="description">概要:</label>
-                <textarea id="description" name="description" class="form-control" rows="4" required placeholder="概要を入力"></textarea>
-            </div>
-            <div class="form-group">
-                <label for="tag">カテゴリ:</label>
-                <select id="tag" name="tag" class="form-control" required>
-                    <!-- プリセットタグがJavaScriptで動的に挿入されます -->
-                </select>
-                <div class="form-group" id="feature-checkbox-container">
-                    <label for="isFeatured">フィーチャーする:</label>
-                    <input type="checkbox" id="isFeatured" name="isFeatured">
-                </div>
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-create-issue">作成</button>
-        </form>
-    </div>
-    <div class="section stance-post-form">
-        <h3>スタンスの投稿</h3>
-        <form id="post-stance-form" class="form">
-            <div class="form-group">
-                <label for="issue">イシュー:</label>
-                <select id="issue" name="issue" class="form-control" required>
-                    <option value="">選択してください</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="stance">スタンス:</label>
-                <select id="stance" name="stance" class="form-control" required>
-                    <option value="YES">YES</option>
-                    <option value="NO">NO</option>
-                    <option value="様子見">様子見</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="comment">コメント (50文字以内):</label>
-                <textarea id="comment" name="comment" class="form-control" rows="3" maxlength="50" placeholder="コメントを入力"></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary btn-submit-stance">投稿</button>
-        </form>
-    </div>
-    
-    
+        <!-- イシュー作成フォーム -->
+<div class="section">
+    <h3>イシューの作成</h3>
+    <form id="create-issue-form" class="create-issue-form">
+        <div class="form-group">
+            <label for="headline">ヘッドライン:</label>
+            <input type="text" id="headline" name="headline" class="form-control" required placeholder="ヘッドラインを入力">
+        </div>
+        <div class="form-group">
+            <label for="description">概要:</label>
+            <textarea id="description" name="description" class="form-control" rows="4" required placeholder="概要を入力"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="tag">カテゴリ:</label>
+            <select id="tag" name="tag" class="form-control" required>
+                <option value="">選択してください</option>
+                <!-- カテゴリがJavaScriptで動的に挿入されます -->
+            </select>
+        </div>
+        <div class="form-group flex-container" id="feature-checkbox-container">
+            <label for="isFeatured">フィーチャーする:</label>
+            <input type="checkbox" id="isFeatured" name="isFeatured">
+        </div>
+        <div id="issue-error" class="error-message"></div>
+        <div id="issue-success" class="success-message"></div>
+        <button type="submit" class="btn btn-primary btn-create-issue">作成</button>
+    </form>
+</div>
+
+<!-- スタンス投稿フォーム -->
+<div class="section stance-post-form">
+    <h3>スタンスの投稿</h3>
+    <form id="post-stance-form" class="form">
+        <div class="form-group">
+            <label for="issue">イシュー:</label>
+            <select id="issue" name="issue" class="form-control" required>
+                <option value="">選択してください</option>
+                <!-- イシューがJavaScriptで動的に挿入されます -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="stance">スタンス:</label>
+            <select id="stance" name="stance" class="form-control" required>
+                <option value="YES">YES</option>
+                <option value="NO">NO</option>
+                <option value="様子見">様子見</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="comment">コメント (50文字以内):</label>
+            <textarea id="comment" name="comment" class="form-control" rows="3" maxlength="50" placeholder="コメントを入力"></textarea>
+        </div>
+        <div id="stance-error" class="error-message"></div>
+        <div id="stance-success" class="success-message"></div>
+        <button type="submit" class="btn btn-primary btn-submit-stance">投稿</button>
+    </form>
+</div>
     <div class="section">
         <h3>自分が作成したイシュー</h3>
         <div id="featured-issues"></div>
@@ -83,6 +92,6 @@
         <div id="existingIssues"></div>
     </div>
 
-    <script src="js/scripts.js"></script>
+    <script src="js/scripts-admin.js" defer></script>
 </body>
 </html>
