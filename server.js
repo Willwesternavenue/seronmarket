@@ -85,7 +85,6 @@ app.use((req, res, next) => {
     next();
 });
 
-
 // 認証ミドルウェア
 function isAuthenticated(req, res, next) {
     if (req.session && req.session.userId) {
@@ -221,17 +220,23 @@ app.get('/api/issues_with_votes', (req, res) => {
             issues.headline,
             issues.description,
             issues.tag,
-            issues.likes, -- likes フィールドを含める
+            issues.likes,
             COUNT(CASE WHEN stances.stance = 'YES' THEN 1 END) as yes_count,
-            COUNT(CASE WHEN stances.stance = 'NO' THEN 1 END) as no_count
+            COUNT(CASE WHEN stances.stance = 'NO' THEN 1 END) as no_count,
+            COUNT(CASE WHEN stances.stance = '様子見' THEN 1 END) as maybe_count,
+            (
+                (SELECT COUNT(*) FROM comments WHERE comments.issue_id = issues.id)
+                + (SELECT COUNT(*) FROM stances WHERE stances.issue_id = issues.id AND stances.comment IS NOT NULL AND stances.comment != '')
+            ) as comments_count,
+            COUNT(stances.id) as stance_count
         FROM 
             issues
         LEFT JOIN 
             stances ON issues.id = stances.issue_id
         WHERE 
-            issues.is_featured = 0 -- フィーチャーイシューを除外
+            issues.is_featured = 0
         GROUP BY 
-            issues.id
+            issues.id;
     `;
 
     db.all(sql, [], (err, issues) => {
@@ -241,7 +246,7 @@ app.get('/api/issues_with_votes', (req, res) => {
         }
 
         const issuesWithVotes = issues.map(issue => {
-            const totalVotes = (issue.yes_count || 0) + (issue.no_count || 0);
+            const totalVotes = (issue.yes_count || 0) + (issue.no_count || 0) + (issue.maybe_count || 0);
             let yes_percent = 0, no_percent = 0;
             if (totalVotes > 0) {
                 yes_percent = (issue.yes_count / totalVotes) * 100;
@@ -251,6 +256,9 @@ app.get('/api/issues_with_votes', (req, res) => {
                 ...issue,
                 yes_percent: yes_percent.toFixed(1),
                 no_percent: no_percent.toFixed(1),
+                // stance_count によりトータルのスタンス数が取得可能
+                stance_count: issue.stance_count || 0,
+                comments: issue.comments || 0  // commentsカラムを返していることを確認
             };
         });
         res.json(issuesWithVotes);
@@ -259,18 +267,28 @@ app.get('/api/issues_with_votes', (req, res) => {
 
 app.get('/api/featured_issues', (req, res) => {
     const sql = `
-        SELECT 
-            issues.*, 
-            COUNT(CASE WHEN stances.stance = 'YES' THEN 1 END) as yes_count,
-            COUNT(CASE WHEN stances.stance = 'NO' THEN 1 END) as no_count
-        FROM 
-            issues
-        LEFT JOIN 
-            stances ON issues.id = stances.issue_id
-        WHERE 
-            issues.is_featured = 1 -- フィーチャーイシューのみを取得
-        GROUP BY 
-            issues.id
+    SELECT 
+        issues.id,
+        issues.headline,
+        issues.description,
+        issues.tag,
+        issues.likes,
+        COUNT(CASE WHEN stances.stance = 'YES' THEN 1 END) as yes_count,
+        COUNT(CASE WHEN stances.stance = 'NO' THEN 1 END) as no_count,
+        (
+            (SELECT COUNT(*) FROM comments WHERE comments.issue_id = issues.id)
+            + (SELECT COUNT(*) FROM stances WHERE stances.issue_id = issues.id AND stances.comment IS NOT NULL AND stances.comment != '')
+        ) as comments_count,
+        COUNT(stances.id) as stance_count
+    FROM 
+        issues
+    LEFT JOIN 
+        stances ON issues.id = stances.issue_id
+    WHERE 
+        issues.is_featured = 1
+    GROUP BY 
+        issues.id;
+
     `;
 
     db.all(sql, [], (err, issues) => {
@@ -290,11 +308,15 @@ app.get('/api/featured_issues', (req, res) => {
                 ...issue,
                 yes_percent: yes_percent.toFixed(1),
                 no_percent: no_percent.toFixed(1),
+                stance_count: issue.stance_count || 0,  // ここで取得したstance_countを反映
+                comments: issue.comments || 0  // commentsカラムを返していることを確認
             };
         });
         res.json(issuesWithVotes);
     });
 });
+
+
 
 
 // 全てのイシューの取得（管理者用）
@@ -304,22 +326,23 @@ app.get('/api/admin/issues', isAuthenticated, isAdmin, (req, res) => {
             issues.*, 
             users.username,
             COUNT(CASE WHEN stances.stance = 'YES' THEN 1 END) as yes_count,
-            COUNT(CASE WHEN stances.stance = 'NO' THEN 1 END) as no_count
+            COUNT(CASE WHEN stances.stance = 'NO' THEN 1 END) as no_count,
+            (SELECT COUNT(*) FROM comments WHERE comments.issue_id = issues.id) as comments,
+            COUNT(stances.id) as stance_count 
         FROM 
             issues
         LEFT JOIN 
             stances ON issues.id = stances.issue_id
         LEFT JOIN 
             users ON issues.created_by = users.id
-        WHERE
-        issues.is_featured = 0 -- フィーチャーイシューを除外
         GROUP BY 
             issues.id
     `;
+
     db.all(sql, [], (err, issues) => {
         if (err) {
             console.error('Database error:', err);
-            return res.status(500).json({ error: 'Database error' }); // JSON形式でエラーを返す
+            return res.status(500).json({ error: 'Database error' });
         }
         const issuesWithVotes = issues.map(issue => {
             const totalVotes = (issue.yes_count || 0) + (issue.no_count || 0);
@@ -337,6 +360,7 @@ app.get('/api/admin/issues', isAuthenticated, isAdmin, (req, res) => {
         res.json(issuesWithVotes);
     });
 });
+
 
 // フィーチャーイシューの更新
 app.put('/api/issues/:id', isAuthenticated, isAdmin, (req, res) => {

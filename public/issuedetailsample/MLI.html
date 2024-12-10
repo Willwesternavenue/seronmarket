@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<title>Mermaid test</title>
+<!-- Mermaid本体読み込み -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script>
+  // DOMロード完了後にMermaidを初期化
+  document.addEventListener('DOMContentLoaded', function() {
+    // 自動描画を有効化
+    mermaid.initialize({ startOnLoad: true });
+  });
+</script>
+</head>
+<body>
+<div class="mermaid">
+graph LR
+   A[スマホ/WEB UI] -->|画像アップロード| B[バックエンドサーバ]
+   B -->|銘板画像OCR処理| C[OCRエンジン]
+   C -->|機種情報返却| B
+   B -->|車両画像解析(セマンティックセグメンテーション)| D[画像異常個所検知モデル]
+   D -->|状態情報| B
+   B -->|LLM問い合わせ(コンディション質問)| E[LLM + RAG]
+   E -->|テキスト回答(状態確認、質問への応答)| B
+   B -->|ヒストリカルデータ参照| F[価格データベース]
+   B -->|価格予測モデル| G[AI査定(時系列予測)]
+   G -->|査定額| B
+   B -->|査定結果を返却| A
+</div>
+</body>
+</html>

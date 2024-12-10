@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>イシュー - 夫婦別姓制度に賛成？</title>
+    <title>イシュー - 夫婦別姓制度に賛成するか？</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -72,7 +72,7 @@
         }
         .stat-item {
             display: flex;
-            flex-direction: column-reverse; /* アイコンをテキストの下に配置 */
+            flex-direction: column; /* アイコンをテキストの下に配置 */
             align-items: center;
             gap: 5px;
             font-size: 14px;
@@ -255,15 +255,13 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="issue-title">SERON Exchange</h1>
-
         <div class="header">
             <div class="category-featured">
                 <span class="category">社会</span>
-                <span class="featured">フィーチャー</span>
+                <span class="featured">Featured</span>
             </div>
-            <h1 class="issue-title">イシュー: 選択的夫婦別姓制度に賛成？</h1>
-            <div class="author">作成者：山田太郎 </br> 投票期間：2024年12月７日〜12月21日</div>
+            <h1 class="issue-title">イシュー: 夫婦別姓制度に賛成するか？</h1>
+            <div class="author">作成者：山田太郎</div>
         </div>
         <div class="top-stats-share">
             <div class="stats">
@@ -272,7 +270,7 @@
                     <i class="fas fa-thumbs-up"></i>
                 </div>
                 <div class="stat-item">
-                    <span>スタンス票: 30</span>
+                    <span>スタンス投稿数: 30</span>
                     <i class="fas fa-bullhorn"></i>
                 </div>
                 <div class="stat-item">
@@ -283,6 +281,9 @@
                     <span>コメント: 15</span>
                     <i class="fas fa-comments"></i>
                 </div>
+            </div>
+            <div class="social-share-top">
+                <a href="#" title="X"><i class="fab fa-twitter"></i></a>
             </div>
         </div>
         <div class="charts">
@@ -296,23 +297,22 @@
             </div>
         </div>
         <div class="ai-comments">
-            <h3><i class="fas fa-robot"></i>Seron AIの判断は</h3>
+            <h3><i class="fas fa-robot"></i>AI評価コメント</h3>
             <div class="ai-comment">
-                <strong>裁定：YES</strong>
-                <p>"夫婦別姓制度の導入は、個々のアイデンティティを尊重し、多様な家族形態を受け入れる社会の一歩となります。個人の選択の自由を広げ、性別に依存しない社会の構築に寄与すると考えられます。"</p>
-                
+                <strong>AIからのコメント:</strong>
+                <p>夫婦別姓制度の導入は、個々のアイデンティティを尊重し、多様な家族形態を受け入れる社会の一歩となります。個人の選択の自由を広げ、性別に依存しない社会の構築に寄与すると考えられます。その一方、伝統的な家族観を揺るがす可能性があり、社会的な混乱を招く恐れがあります。また、姓の統一が家族の一体感を醸成する役割を果たしている点を考慮する必要があります。</p>
+                <span class="likes"><i class="fas fa-thumbs-up"></i> 25</span>
             </div>
-            <span class="likes"><i class="fas fa-thumbs-up"></i> 25</span>
         </div>
         <div class="comments">
             <div class="comments-side">
-                <h2><i class="fas fa-thumbs-up icon"></i> YES陣営のコメント</h2>
+                <h2><i class="fas fa-thumbs-up icon"></i> YES コメント</h2>
                 <div id="yes-comments">
                     <!-- YESコメントがここに展開 -->
                 </div>
             </div>
             <div class="comments-side">
-                <h2><i class="fas fa-thumbs-down icon"></i> NO陣営のコメント</h2>
+                <h2><i class="fas fa-thumbs-down icon"></i> NO コメント</h2>
                 <div id="no-comments">
                     <!-- NOコメントがここに展開 -->
                 </div>
@@ -392,15 +392,15 @@
 
         // コメントデータ
         const yesComments = [
-            { text: "夫婦が別々の姓を持つことは、個人のアイデンティティを尊重する上で重要です。", stances: 10, likes: 18, favorites: 5, comments: 4 },
-            { text: "賛成です！姓を選ぶ自由は大切です。", stances: 8, likes: 14, favorites: 3, comments: 2 },
-            { text: "支持します。伝統に縛られない柔軟な社会が必要です。", stances: 5, likes: 9, favorites: 2, comments: 1 }
+            { text: "夫婦が別々の姓を持つことは、個人のアイデンティティを尊重する上で重要です。", stances: 10, likes: 18, favorites: 5, comments: 4, author: "山本花子" },
+            { text: "賛成です！姓を選ぶ自由は大切です。", stances: 8, likes: 14, favorites: 3, comments: 2, author: "佐藤太郎" },
+            { text: "支持します。伝統に縛られない柔軟な社会が必要です。", stances: 5, likes: 9, favorites: 2, comments: 1, author: "鈴木一郎" }
         ];
 
         const noComments = [
-            { text: "夫婦で同じ姓を持つことで家族の一体感が保たれると思います。", stances: 7, likes: 11, favorites: 4, comments: 3 },
-            { text: "反対します。姓の統一が社会の安定に寄与します。", stances: 4, likes: 7, favorites: 2, comments: 2 },
-            { text: "再考が必要です。伝統を守るべきです。", stances: 2, likes: 4, favorites: 1, comments: 1 }
+            { text: "夫婦で同じ姓を持つことで家族の一体感が保たれると思います。", stances: 7, likes: 11, favorites: 4, comments: 3, author: "高橋美咲" },
+            { text: "反対します。姓の統一が社会の安定に寄与します。", stances: 4, likes: 7, favorites: 2, comments: 2, author: "田中健太" },
+            { text: "再考が必要です。伝統を守るべきです。", stances: 2, likes: 4, favorites: 1, comments: 1, author: "伊藤恵" }
         ];
 
         // コメント表示関数
@@ -412,7 +412,6 @@
                 const div = document.createElement('div');
                 div.className = 'comment';
                 div.innerHTML = `
-                    <div class="comment-details">${comment.text}</div>
                     <div class="comment-header">
                         <div class="info">
                             <div class="icon-text"><i class="fas fa-bullhorn"></i> ${comment.stances}</div>
@@ -420,6 +419,10 @@
                             <div class="icon-text"><i class="fas fa-star"></i> ${comment.favorites}</div>
                             <div class="icon-text"><i class="fas fa-comments"></i> ${comment.comments}</div>
                         </div>
+                    </div>
+                    <div class="comment-details">
+                        ${comment.text}<br>
+                        <strong>作成者:</strong> ${comment.author}
                     </div>
                 `;
                 container.appendChild(div);

@@ -180,10 +180,10 @@ function createFeaturedIssueCard(issue) {
     const favoritesCount = issue.favorites || 0;
 
     return `
-        <div class="featured-issue-card">
-            <span class="issue-category">${sanitizeHTML(issue.tag)}</span>
-            <span class="trending-icon"><i class="fas fa-fire"></i></span>
-            <h4 class="issue-title">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
+        <div class="featured-issue-card category-${issue.category_id}">
+        <span class="issue-category">${sanitizeHTML(issue.tag)}</span>
+        <span class="trending-icon"><i class="fas fa-fire"></i></span>
+        <h4 class="issue-title">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
             <div class="vote-bar-container">
                 <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>
                 <div class="vote-bar-no" style="width: ${noPercent}%;"></div>
@@ -194,7 +194,7 @@ function createFeaturedIssueCard(issue) {
             </div>
             <div class="action-buttons">
                 <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
-                    <i class="fas fa-arrow-up icon"></i> ${issue.stances || 0}
+                    <i class="fas fa-arrow-up icon"></i> ${issue.stance_count || 0}
                 </button>
                 <button class="like-button" data-issue-id="${issue.id}" tabindex="0" aria-label="いいね ボタン">
                     <i class="fas fa-heart icon"></i> ${issue.likes || 0}
@@ -203,7 +203,7 @@ function createFeaturedIssueCard(issue) {
                     <i class="fas fa-star icon"></i> ${favoritesCount}
                 </button>
                 <button class="comment-button" data-issue-id="${issue.id}" tabindex="0" aria-label="コメント ボタン">
-                    <i class="fas fa-comment icon"></i> ${issue.comments || 0}
+                    <i class="fas fa-comment icon"></i> ${issue.comments_count || 0}
                 </button>
             </div>
         </div>
@@ -223,7 +223,6 @@ function createOtherIssueCard(issue) {
     return `
         <div class="other-issue-card">
             <span class="issue-category">${sanitizeHTML(issue.tag)}</span>
-            <span class="trending-icon"><i class="fas fa-fire"></i></span>
             <h4 class="issue-title">${sanitizeHTML(truncateText(issue.headline, 30))}</h4>
             
             <div class="vote-bar-container">
@@ -236,7 +235,7 @@ function createOtherIssueCard(issue) {
             </div>
             <div class="action-buttons">
             <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
-                    <i class="fas fa-arrow-up icon"></i> ${issue.stances || 0}
+                    <i class="fas fa-arrow-up icon"></i> ${issue.stance_count || 0}
                 </button>    
             <button class="like-button" data-issue-id="${issue.id}" tabindex="0" aria-label="いいね ボタン">
                     <i class="fas fa-heart icon"></i> ${issue.likes || 0}
@@ -245,7 +244,7 @@ function createOtherIssueCard(issue) {
                     <i class="fas fa-star icon"></i> ${favoritesCount}
                 </button>
                 <button class="comment-button" data-issue-id="${issue.id}" tabindex="0" aria-label="コメント ボタン">
-                    <i class="fas fa-comment icon"></i> ${issue.comments || 0}
+                    <i class="fas fa-comment icon"></i> ${issue.comments_count || 0}
                 </button>
             </div>
         </div>
