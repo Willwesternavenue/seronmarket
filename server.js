@@ -21,6 +21,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
+// サーバー起動
+const PORT = process.env.PORT || 3000;
+const HOST = '127.0.0.1'; // ホストを127.0.0.1に設定
+
 // ミドルウェア設定
 app.use(cors()); // 必要に応じてCORSを有効化
 app.use(express.urlencoded({ extended: true }));
@@ -126,37 +130,6 @@ app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// ログイン処理
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        if (!user) return res.status(400).json({ error: 'User not found' });
-
-        bcrypt.compare(password, user.password, (err, result) => {
-            if (err) {
-                console.error('Bcrypt error:', err);
-                return res.status(500).json({ error: 'Authentication error' });
-            }
-            if (result) {
-                req.session.userId = user.id;
-                req.session.username = user.username;
-                req.session.isAdmin = user.is_admin === 1;
-                if (req.session.isAdmin) {
-                    res.redirect('/admin');
-                } else {
-                    res.redirect('/mypage');
-                }
-            } else {
-                res.status(400).json({ error: 'Incorrect password' });
-            }
-        });
-    });
-});
-
 // 登録処理
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
@@ -190,6 +163,38 @@ app.post('/register', (req, res) => {
     });
 });
 
+// ログイン処理
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (!user) return res.status(400).json({ error: 'User not found' });
+
+        bcrypt.compare(password, user.password, (err, result) => {
+            if (err) {
+                console.error('Bcrypt error:', err);
+                return res.status(500).json({ error: 'Authentication error' });
+            }
+            if (result) {
+                req.session.userId = user.id;
+                req.session.username = user.username;
+                req.session.isAdmin = user.is_admin === 1;
+                if (req.session.isAdmin) {
+                    res.redirect('/admin');
+                } else {
+                    res.redirect('/mypage');
+                }
+            } else {
+                res.status(400).json({ error: 'Incorrect password' });
+            }
+        });
+    });
+});
+
+
 // ログアウト処理
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
@@ -203,12 +208,21 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// サーバー起動
-const PORT = process.env.PORT || 3000;
-const HOST = '127.0.0.1'; // ホストを127.0.0.1に設定
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://${HOST}:${PORT}`);
+});
+
+// イシューの取得
+app.get('/api/issues', (req, res) => {
+    const sql = `SELECT id, headline, description, tag FROM issues LIMIT 100`; // 必要フィールドだけ取得
+    db.all(sql, [], (err, issues) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Failed to fetch issues' }); // 安全なエラー内容
+        }
+        res.json(issues);
+    });
 });
 
 
@@ -316,9 +330,6 @@ app.get('/api/featured_issues', (req, res) => {
     });
 });
 
-
-
-
 // 全てのイシューの取得（管理者用）
 app.get('/api/admin/issues', isAuthenticated, isAdmin, (req, res) => {
     const sql = `
@@ -360,7 +371,6 @@ app.get('/api/admin/issues', isAuthenticated, isAdmin, (req, res) => {
         res.json(issuesWithVotes);
     });
 });
-
 
 // フィーチャーイシューの更新
 app.put('/api/issues/:id', isAuthenticated, isAdmin, (req, res) => {
@@ -407,17 +417,6 @@ app.put('/api/issues/:id', isAuthenticated, isAdmin, (req, res) => {
     });
 });
 
-// イシューの取得
-app.get('/api/issues', (req, res) => {
-    const sql = `SELECT id, headline, description, tag FROM issues LIMIT 100`; // 必要フィールドだけ取得
-    db.all(sql, [], (err, issues) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ error: 'Failed to fetch issues' }); // 安全なエラー内容
-        }
-        res.json(issues);
-    });
-});
 
 // イシューの作成
 app.post('/api/issues', (req, res) => {
@@ -501,7 +500,6 @@ app.post('/api/stances', isAuthenticated, (req, res) => {
     });
 });
 
-
 // テーブルの作成（Favorites）
 db.run(`
     CREATE TABLE IF NOT EXISTS favorites (
@@ -520,6 +518,7 @@ db.run(`
         console.log('Favorites table ensured');
     }
 });
+
 // お気に入りを追加または削除するエンドポイント
 app.post('/api/issues/:id/favorite', isAuthenticated, (req, res) => {
     const issueId = req.params.id;
@@ -639,6 +638,7 @@ app.post('/api/issues/:id/like', (req, res) => {
     });
 });
 
+// ユーザー情報を取得するエンドポイント
 app.get('/api/user', isAuthenticated, (req, res) => {
     const sql = 'SELECT id, username, is_admin FROM users WHERE id = ?';
     db.get(sql, [req.session.userId], (err, user) => {
@@ -657,14 +657,6 @@ app.get('/api/user', isAuthenticated, (req, res) => {
     });
 });
 
-function isAdmin(req, res, next) {
-    if (req.session && req.session.isAdmin) {
-        next();
-    } else {
-        res.status(403).json({ error: 'Forbidden: Admins only' });
-    }
-}
-// server.js
 
 app.get('/api/admin/users', isAuthenticated, isAdmin, (req, res) => {
     const sql = 'SELECT id, username, is_admin FROM users';
@@ -676,18 +668,6 @@ app.get('/api/admin/users', isAuthenticated, isAdmin, (req, res) => {
         res.json(users);
     });
 });
-// 既存のコードに続けて以下を追加
-
-// お気に入りを追加または削除するエンドポイント
-app.post('/api/issues/:id/favorite', isAuthenticated, (req, res) => {
-    // 上記のコードをここに追加
-});
-
-// コメントを追加するエンドポイント
-app.post('/api/issues/:id/comment', isAuthenticated, (req, res) => {
-    // 上記のコードをここに追加
-});
-// server.js
 
 // カテゴリを取得するエンドポイント（静的リスト）
 app.get('/api/categories', (req, res) => {
