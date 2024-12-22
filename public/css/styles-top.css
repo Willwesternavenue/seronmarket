@@ -1,0 +1,42 @@
+/* styles-top.css */
+
+/* トップページ専用のカテゴリカラー */
+.category-1 .issue-category {
+    background-color: red;
+}
+
+.category-2 .issue-category {
+    background-color: blue;
+}
+
+.category-3 .issue-category {
+    background-color: green;
+}
+
+.category-4 .issue-category {
+    background-color: yellow;
+}
+
+/* 必要なスタイルを追加 */
+#featured-issues,
+#existingIssues {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.featured-issue-card, .other-issue-card {
+    border: 1px solid var(--color-border);
+    background-color: var(--color-white);
+    box-shadow: 0 2px 4px var(--color-shadow);
+    padding: 15px;
+    border-radius: 8px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.featured-issue-card:hover, .other-issue-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px var(--color-shadow);
+}

@@ -25,6 +25,21 @@ const db = new sqlite3.Database(dbPath, (err) => {
 const PORT = process.env.PORT || 3000;
 const HOST = '127.0.0.1'; // ホストを127.0.0.1に設定
 
+// 初期データの投入
+const initialCategories = [
+    '政治', '社会', '経済', '外交', '国際', '税金',
+    'ビジネス', '少子高齢化', '医療福祉', '教育', '環境',
+    'テクノロジー', '文化', '地理'
+];
+
+initialCategories.forEach(name => {
+    db.run(`INSERT OR IGNORE INTO categories (name) VALUES (?)`, [name], (err) => {
+        if (err) {
+            console.error('Error inserting initial categories:', err);
+        }
+    });
+});
+
 // ミドルウェア設定
 app.use(cors()); // 必要に応じてCORSを有効化
 app.use(express.urlencoded({ extended: true }));
@@ -505,6 +520,22 @@ app.post('/api/stances', isAuthenticated, (req, res) => {
     });
 });
 
+// カテゴリテーブルの作成
+db.run(`
+    CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`, (err) => {
+    if (err) {
+        console.error('Error creating categories table:', err);
+    } else {
+        console.log('Categories table ensured');
+    }
+});
+
+
 // テーブルの作成（Favorites）
 db.run(`
     CREATE TABLE IF NOT EXISTS favorites (
@@ -680,24 +711,74 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'An unexpected error occurred. Please try again later.' }); // 一般的なメッセージを返す
 });
 
+// カテゴリを追加
+app.post('/api/categories', isAuthenticated, isAdmin, (req, res) => {
+    const { name } = req.body;
+
+    if (!name || name.trim() === '') {
+        return res.status(400).json({ error: 'Category name is required' });
+    }
+
+    const sql = `INSERT INTO categories (name) VALUES (?)`;
+    db.run(sql, [name.trim()], function(err) {
+        if (err) {
+            if (err.code === 'SQLITE_CONSTRAINT') {
+                return res.status(400).json({ error: 'Category already exists' });
+            }
+            console.error('Database insert error:', err);
+            return res.status(500).json({ error: 'Failed to add category' });
+        }
+        res.status(201).json({ id: this.lastID, message: 'Category added successfully' });
+    });
+});
+
+
 // カテゴリを取得するエンドポイント（静的リスト）
+// カテゴリを取得
 app.get('/api/categories', (req, res) => {
-    const categories = [
-        { id: 1, name: '政治' },
-        { id: 2, name: '社会' },
-        { id: 3, name: '経済' },
-        { id: 4, name: '外交' },
-        { id: 5, name: '国際' },
-        { id: 6, name: '税金' },
-        { id: 7, name: 'ビジネス' },
-        { id: 8, name: '少子高齢化' },
-        { id: 9, name: '医療福祉' },
-        { id: 10, name: '教育' },
-        { id: 11, name: '環境' },
-        { id: 12, name: 'テクノロジー' },
-        { id: 13, name: '文化' },
-        { id: 14, name: '地理' },
-        // 必要に応じて追加
-    ];
-    res.json(categories);
+    const sql = `SELECT id, name FROM categories ORDER BY name ASC`;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            console.error('Database fetch error:', err);
+            return res.status(500).json({ error: 'Failed to fetch categories' });
+        }
+        res.json(rows);
+    });
+});
+// カテゴリを更新
+app.put('/api/categories/:id', isAuthenticated, isAdmin, (req, res) => {
+    const categoryId = req.params.id;
+    const { name } = req.body;
+
+    if (!name || name.trim() === '') {
+        return res.status(400).json({ error: 'Category name is required' });
+    }
+
+    const sql = `UPDATE categories SET name = ? WHERE id = ?`;
+    db.run(sql, [name.trim(), categoryId], function(err) {
+        if (err) {
+            console.error('Database update error:', err);
+            return res.status(500).json({ error: 'Failed to update category' });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+        res.json({ message: 'Category updated successfully' });
+    });
+});
+// カテゴリを削除
+app.delete('/api/categories/:id', isAuthenticated, isAdmin, (req, res) => {
+    const categoryId = req.params.id;
+
+    const sql = `DELETE FROM categories WHERE id = ?`;
+    db.run(sql, [categoryId], function(err) {
+        if (err) {
+            console.error('Database delete error:', err);
+            return res.status(500).json({ error: 'Failed to delete category' });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+        res.json({ message: 'Category deleted successfully' });
+    });
 });
