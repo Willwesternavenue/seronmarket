@@ -42,8 +42,8 @@ initialCategories.forEach(name => {
 
 // ミドルウェア設定
 app.use(cors()); // 必要に応じてCORSを有効化
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your_secure_secret_key', // 環境変数を使用
     resave: false,
@@ -253,7 +253,8 @@ app.get('/api/issues_with_votes', (req, res) => {
             issues.id,
             issues.headline,
             issues.description,
-            issues.tag,
+            categories.name AS tag, -- categories.name を tag として取得
+            issues.category_id, -- category_id を取得
             issues.likes,
             COUNT(CASE WHEN stances.stance = 'YES' THEN 1 END) as yes_count,
             COUNT(CASE WHEN stances.stance = 'NO' THEN 1 END) as no_count,
@@ -267,10 +268,12 @@ app.get('/api/issues_with_votes', (req, res) => {
             issues
         LEFT JOIN 
             stances ON issues.id = stances.issue_id
+        LEFT JOIN 
+            categories ON issues.category_id = categories.id -- categories を結合
         WHERE 
             issues.is_featured = 0
         GROUP BY 
-            issues.id;
+            issues.id, categories.name; -- categories.name を GROUP BY に追加
     `;
 
     db.all(sql, [], (err, issues) => {
@@ -305,10 +308,12 @@ app.get('/api/featured_issues', (req, res) => {
         issues.id,
         issues.headline,
         issues.description,
-        issues.tag,
+        categories.name AS tag, -- categories.name を tag として取得
+        issues.category_id, -- category_id を取得
         issues.likes,
         COUNT(CASE WHEN stances.stance = 'YES' THEN 1 END) as yes_count,
         COUNT(CASE WHEN stances.stance = 'NO' THEN 1 END) as no_count,
+        COUNT(CASE WHEN stances.stance = '様子見' THEN 1 END) as maybe_count,
         (
             (SELECT COUNT(*) FROM comments WHERE comments.issue_id = issues.id)
             + (SELECT COUNT(*) FROM stances WHERE stances.issue_id = issues.id AND stances.comment IS NOT NULL AND stances.comment != '')
@@ -318,11 +323,12 @@ app.get('/api/featured_issues', (req, res) => {
         issues
     LEFT JOIN 
         stances ON issues.id = stances.issue_id
+    LEFT JOIN 
+        categories ON issues.category_id = categories.id -- categories を結合
     WHERE 
         issues.is_featured = 1
     GROUP BY 
-        issues.id;
-
+        issues.id, categories.name; -- categories.name を GROUP BY に追加
     `;
 
     db.all(sql, [], (err, issues) => {
@@ -532,6 +538,26 @@ db.run(`
         console.error('Error creating categories table:', err);
     } else {
         console.log('Categories table ensured');
+    }
+});
+
+db.run(`
+    CREATE TABLE IF NOT EXISTS stances (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        issue_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        stance TEXT NOT NULL,
+        comment TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (issue_id) REFERENCES issues(id),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        UNIQUE (user_id, issue_id) -- 一意制約
+    )
+`, (err) => {
+    if (err) {
+        console.error('Error creating stances table:', err);
+    } else {
+        console.log('Stances table ensured');
     }
 });
 

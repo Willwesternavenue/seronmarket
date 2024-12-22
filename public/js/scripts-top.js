@@ -59,34 +59,17 @@ function handleActionButtonClick(action, issueId, button) {
 
     switch(action) {
         case 'like':
-            endpoint = `/api/issues/${issueId}/like`;
-            break;
-        case 'favorite':
-            // ここではお気に入りの追加を行います。削除も可能にしたい場合は、トグル機能を実装する必要があります。
-            endpoint = `/api/issues/${issueId}/favorite`;
-            body = { action: 'add' };
-            break;
-        case 'comment':
-            // コメントを追加するために、コメント内容を取得するプロンプトを表示します。
-            const userComment = prompt('コメントを入力してください:');
-            if (!userComment || userComment.trim() === '') {
-                alert('コメントは空にできません。');
-                return;
-            }
-            endpoint = `/api/issues/${issueId}/comment`;
-            body = { comment: userComment.trim() };
+            endpoint = `/api/issues/${issueId}/like`; // サーバー側エンドポイント
             break;
         case 'stance':
-            // スタンスを選択するプロンプトを表示します。
             const userStance = prompt('スタンスを選択してください (YES, NO, 様子見):');
             if (!['YES', 'NO', '様子見'].includes(userStance)) {
                 alert('有効なスタンスを選択してください。');
                 return;
             }
-            // コメントが必要な場合は追加で取得します。
             const stanceComment = prompt('スタンスに関するコメントを入力してください (任意):');
             endpoint = `/api/stances`;
-            body = { issue_id: issueId, stance: userStance, comment: stanceComment ? stanceComment.trim() : null };
+            body = { issue_id: issueId, stance: userStance, comment: stanceComment || null };
             break;
         default:
             console.error('Unknown action:', action);
@@ -103,7 +86,11 @@ function handleActionButtonClick(action, issueId, button) {
     .then(handleFetchResponse)
     .then(data => {
         alert(`${getActionName(action)}しました！`);
-        updateButtonCount(button, data[`${action}s`] || 0); // 例: likes, favorites, comments, stances
+        if (action === 'like') {
+            updateButtonCount(button, data.likes || 0); // "いいね" の場合
+        } else if (action === 'stance') {
+            updateButtonCount(button, data.stance_count || 0); // スタンスの場合
+        }
     })
     .catch(err => {
         console.error(`Error performing ${action} on issue ${issueId}:`, err);
@@ -132,8 +119,10 @@ function getActionName(action) {
  * @param {number} newCount - 新しいカウント値
  */
 function updateButtonCount(button, newCount) {
-    const actionText = button.textContent.split('(')[0].trim();
-    button.innerHTML = `${button.querySelector('.icon').outerHTML}${actionText} (${newCount})`;
+    const countSpan = button.querySelector('.count');
+    if (countSpan) {
+        countSpan.textContent = `(${newCount})`;
+    }
 }
 
 /**
@@ -178,19 +167,19 @@ function createFeaturedIssueCard(issue) {
     const yesPercent = sanitizePercentage(issue.yes_percent);
     const noPercent = sanitizePercentage(issue.no_percent);
     const favoritesCount = issue.favorites || 0;
-
+    const categoryClass = issue.category_id ? `category-${issue.category_id}` : 'category-default';
+ 
     return `
-        <div class="featured-issue-card category-${issue.category_id}">
+        <div class="featured-issue-card ${categoryClass}">
             <span class="issue-category">${sanitizeHTML(issue.tag)}</span>
             <span class="trending-icon"><i class="fas fa-fire"></i></span>
             <h4 class="issue-title">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
             <div class="vote-bar-container">
-                <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>
-                <div class="vote-bar-no" style="width: ${noPercent}%;"></div>
-            </div>
+                <div class="vote-bar-yes" style="width: ${sanitizePercentage(issue.yes_percent)}%;"></div>
+                <div class="vote-bar-no" style="width: ${sanitizePercentage(issue.no_percent)}%;"></div>            </div>
             <div class="vote-counts">
-                <span>YES ${yesPercent}%</span>
-                <span>NO ${noPercent}%</span>
+                <span>YES ${sanitizePercentage(issue.yes_percent)}%</span>
+                <span>NO ${sanitizePercentage(issue.no_percent)}%</span>
             </div>
             <div class="action-buttons">
                 <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
@@ -219,9 +208,10 @@ function createOtherIssueCard(issue) {
     const yesPercent = sanitizePercentage(issue.yes_percent);
     const noPercent = sanitizePercentage(issue.no_percent);
     const favoritesCount = issue.favorites || 0;
+    const categoryClass = issue.category_id ? `category-${issue.category_id}` : 'category-default';
 
     return `
-        <div class="other-issue-card category-${issue.category_id}">
+        <div class="other-issue-card ${categoryClass}">
             <span class="issue-category">${sanitizeHTML(issue.tag)}</span>
             <h4 class="issue-title">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
             <div class="vote-bar-container">
@@ -233,10 +223,10 @@ function createOtherIssueCard(issue) {
                 <span>NO ${noPercent}%</span>
             </div>
             <div class="action-buttons">
-            <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
+                <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
                     <i class="fas fa-hand-paper icon"></i> ${issue.stance_count || 0}
-                </button>    
-            <button class="like-button" data-issue-id="${issue.id}" tabindex="0" aria-label="いいね ボタン">
+                </button>
+                <button class="like-button" data-issue-id="${issue.id}" tabindex="0" aria-label="いいね ボタン">
                     <i class="fas fa-heart icon"></i> ${issue.likes || 0}
                 </button>
                 <button class="favorite-button" data-issue-id="${issue.id}" tabindex="0" aria-label="お気に入り ボタン">
@@ -249,6 +239,7 @@ function createOtherIssueCard(issue) {
         </div>
     `;
 }
+
 
 /**
  * サニタイズ関数
@@ -294,4 +285,20 @@ function handleFetchResponse(response) {
         });
     }
     return response.json();
+}
+function displayError(message) {
+    const errorContainer = document.getElementById('error-message');
+    if (errorContainer) {
+        errorContainer.textContent = message;
+        errorContainer.style.display = 'block';
+    }
+}
+
+function createActionButton(className, label, iconClass, count) {
+    return `
+        <button class="${className}" tabindex="0" aria-label="${label}">
+            <i class="${iconClass} icon"></i>
+            <span class="count">(${count || 0})</span>
+        </button>
+    `;
 }
