@@ -82,8 +82,6 @@ app.use((req, res, next) => {
         const csp = res.getHeader('Content-Security-Policy');
         if (csp) {
             console.log('CSP Header:', csp);
-        } else {
-            console.log('CSP Header is not set.');
         }
     });
     next();
@@ -131,29 +129,35 @@ app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
 });
 
 // 登録処理
-app.post('/register', (req, res) => {
+app.post('/register', (req, res, next) => {
     const { username, password } = req.body;
+
     if (!username || !password) {
         return res.status(400).json({ error: 'Username and password are required' });
     }
+
     db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
         if (err) {
             console.error('Database error:', err);
-            return res.status(500).json({ error: 'Database error' });
+            return next(err); // エラーミドルウェアに渡す
         }
+
         if (user) {
             return res.status(400).json({ error: 'Username already exists' });
         }
+
         bcrypt.hash(password, 10, (err, hash) => {
             if (err) {
                 console.error('Bcrypt error:', err);
-                return res.status(500).json({ error: 'Error hashing password' });
+                return next(err); // エラーミドルウェアに渡す
             }
+
             db.run('INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)', [username, hash, 0], function(err) {
                 if (err) {
                     console.error('Database error:', err);
-                    return res.status(500).json({ error: 'Error creating user' });
+                    return next(err); // エラーミドルウェアに渡す
                 }
+
                 req.session.userId = this.lastID;
                 req.session.username = username;
                 req.session.isAdmin = false;
@@ -162,6 +166,7 @@ app.post('/register', (req, res) => {
         });
     });
 });
+
 
 // ログイン処理
 app.post('/login', (req, res) => {
@@ -669,6 +674,12 @@ app.get('/api/admin/users', isAuthenticated, isAdmin, (req, res) => {
     });
 });
 
+// エラーハンドリングミドルウェア
+app.use((err, req, res, next) => {
+    console.error('Internal Server Error:', err); // 詳細なエラーをサーバーログに記録
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again later.' }); // 一般的なメッセージを返す
+});
+
 // カテゴリを取得するエンドポイント（静的リスト）
 app.get('/api/categories', (req, res) => {
     const categories = [
@@ -681,6 +692,11 @@ app.get('/api/categories', (req, res) => {
         { id: 7, name: 'ビジネス' },
         { id: 8, name: '少子高齢化' },
         { id: 9, name: '医療福祉' },
+        { id: 10, name: '教育' },
+        { id: 11, name: '環境' },
+        { id: 12, name: 'テクノロジー' },
+        { id: 13, name: '文化' },
+        { id: 14, name: '地理' },
         // 必要に応じて追加
     ];
     res.json(categories);

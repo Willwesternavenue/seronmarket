@@ -221,7 +221,7 @@ function createOtherIssueCard(issue) {
     const favoritesCount = issue.favorites || 0;
 
     return `
-        <div class="other-issue-card">
+        <div class="other-issue-card category-${issue.category_id}">
             <span class="issue-category">${sanitizeHTML(issue.tag)}</span>
             <h4 class="issue-title">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
             <div class="vote-bar-container">
