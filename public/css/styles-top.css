@@ -1,52 +1,5 @@
 /* styles-top.css */
 
-/* トップページ専用のカテゴリカラー */
-.category-1 .issue-category {
-    background-color: red;
-}
-
-.category-2 .issue-category {
-    background-color: blue;
-}
-
-.category-3 .issue-category {
-    background-color: green;
-}
-
-.category-4 .issue-category {
-    background-color: yellow;
-}
-.category-5 .issue-category {
-    background-color: purple;
-}
-.category-6 .issue-category {
-    background-color: orange;
-}
-.category-7 .issue-category {
-    background-color: pink;
-}
-.category-8 .issue-category {
-    background-color: brown;
-}
-.category-9 .issue-category {
-    background-color: black;
-}
-.category-10 .issue-category {
-    background-color: gray;
-}
-.category-11 .issue-category {
-    background-color: lightblue;
-}
-.category-12 .issue-category {
-    background-color: lightgrey;
-}
-.category-13 .issue-category {
-    background-color: gold;
-}
-.category-14 .issue-category {
-    background-color: lightcoral;
-}
-
 /* 必要なスタイルを追加 */
 #featured-issues,
 #existingIssues {
