@@ -25,6 +25,10 @@
     --border-radius: 8px;
     --transition-speed: 0.3s;
 }
+h1 {
+    font-size: 24px;
+    color: #004085; /* 薄いグレー */
+}
 
 /* -----------------------------------
    Global Styles
