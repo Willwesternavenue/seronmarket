@@ -31,7 +31,7 @@ function fetchUserInfo() {
             return response.json();
         })
         .then(user => {
-            setElementText('username', user.username || '不明');
+            document.getElementById('username').textContent = user.username || 'Unknown';
             const adminCheckbox = document.getElementById('is-admin-checkbox');
             if (adminCheckbox) {
                 adminCheckbox.checked = user.isAdmin || false;

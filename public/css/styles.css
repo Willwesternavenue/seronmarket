@@ -779,7 +779,7 @@ a:hover {
 }
 
 .category-3 .issue-category {
-    background-color: green;
+    background-color: darkgreen;
 }
 .category-4 .issue-category {
     background-color: yellow;
@@ -791,25 +791,25 @@ a:hover {
     background-color: gray;
 }
 .category-7 .issue-category {
-    background-color: beige;
+    background-color: darkcyan;
 }
 .category-8 .issue-category {
-    background-color: pink;
+    background-color: darkorchid;
 }
 .category-9 .issue-category {
-    background-color: orange;
+    background-color: darkorange;
 }
 .category-10 .issue-category {
     background-color: purple;
 }
 .category-11 .issue-category {
-    background-color: lightgray;
+    background-color: darkred;
 }
 .category-12 .issue-category {
     background-color: darkkhaki;
 }
 .category-13 .issue-category {
-    background-color: gold;
+    background-color: darkgoldenrod;
 }
 .category-14 .issue-category {
     background-color: darkgreen;

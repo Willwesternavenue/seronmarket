@@ -101,9 +101,22 @@ if (process.env.NODE_ENV !== 'production') {
 // =========================
 function isAuthenticated(req, res, next) {
     if (req.session && req.session.userId) {
-        return next();
+        // データベースからユーザー情報を取得して req.user に設定
+        const sql = 'SELECT id, username, is_Admin FROM users WHERE id = ?';
+        db.get(sql, [req.session.userId], (err, user) => {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ error: 'Internal server error' });
+            }
+            if (!user) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+            req.user = user; // `req.user` にユーザー情報を設定
+            next();
+        });
+    } else {
+        return res.status(401).json({ error: 'Unauthorized' });
     }
-    return res.status(401).json({ error: 'Unauthorized' });
 }
 
 function isAdmin(req, res, next) {
@@ -112,6 +125,7 @@ function isAdmin(req, res, next) {
     }
     return res.status(403).json({ error: 'Forbidden: Admins only' });
 }
+
 
 // =========================
 // 5. テーブル作成
@@ -223,7 +237,48 @@ app.get('/mypage', isAuthenticated, (req, res) => {
 app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
+// ログインユーザー情報取得
+app.get('/api/user', isAuthenticated, (req, res) => {
+    if (!req.user) {
+        return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({
+        id: req.user.id,
+        username: req.user.username,
+        isAdmin: req.user.isAdmin,
+    });
+});
 
+// セッション内容のデバッグ
+app.get('/debug-session', (req, res) => {
+    res.json(req.session);
+});
+
+
+// すべてのイシュー取得
+app.get('/api/issues', (req, res) => {
+    const sql = `
+        SELECT
+            issues.id,
+            issues.headline,
+            issues.description,
+            issues.category_id,
+            categories.name AS category_name,
+            users.username AS author_name,
+            issues.likes
+        FROM
+            issues
+        LEFT JOIN categories ON issues.category_id = categories.id
+        LEFT JOIN users ON issues.created_by = users.id
+    `;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            console.error('Error fetching issues:', err);
+            return res.status(500).json({ error: 'Failed to fetch issues' });
+        }
+        res.json(rows);
+    });
+});
 // --- 認証系エンドポイント ---
 
 // 新規ユーザー登録
@@ -261,7 +316,6 @@ app.post('/register', (req, res) => {
     });
 });
 
-// ログイン
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
@@ -282,11 +336,7 @@ app.post('/login', (req, res) => {
                 req.session.userId = user.id;
                 req.session.username = user.username;
                 req.session.isAdmin = user.is_admin === 1;
-                if (req.session.isAdmin) {
-                    res.redirect('/admin');
-                } else {
-                    res.redirect('/mypage');
-                }
+                res.redirect('/mypage'); // ログイン後リダイレクト
             } else {
                 res.status(400).json({ error: 'Incorrect password' });
             }
@@ -751,7 +801,7 @@ app.get('/api/issues_with_votes', (req, res) => {
         LEFT JOIN categories ON issues.category_id = categories.id
         LEFT JOIN users ON issues.created_by = users.id
         WHERE issues.is_featured = 0
-        GROUP BY issues.id, categories.name, users.username;
+        GROUP BY issues.id, users.username;
     `;
     db.all(sql, [], (err, rows) => {
         if (err) {
@@ -794,7 +844,7 @@ app.get('/api/admin/issues', isAuthenticated, isAdmin, (req, res) => {
         LEFT JOIN stances ON issues.id = stances.issue_id
         LEFT JOIN users ON issues.created_by = users.id
         GROUP BY
-            issues.id, categories.name, users.username;
+            issues.id, users.username;
     `;
     db.all(sql, [], (err, issues) => {
         if (err) {
