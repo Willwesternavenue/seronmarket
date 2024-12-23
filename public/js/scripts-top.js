@@ -176,7 +176,7 @@ function createFeaturedIssueCard(issue) {
             <span class="issue-category">${sanitizeHTML(issue.category_name)}</span>
             <span class="trending-icon"><i class="fas fa-fire"></i></span>
             <a href="/issue.html?issue_id=${issue.id}">
-                <h2>${sanitizeHTML(issue.headline)}</h2>
+                <h3>${sanitizeHTML(issue.headline)}</h3>
             </a>
             <p>${sanitizeHTML(issue.description)}</p>
             <div class="vote-bar-container">
