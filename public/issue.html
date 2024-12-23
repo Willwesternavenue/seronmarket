@@ -104,7 +104,67 @@
                 console.error(error);
                 document.body.innerHTML = '<p>データの取得に失敗しました。</p>';
             });
-    
+    // ユーザーデータ (例: YES, NO, 様子見の割合)
+const userData = {
+    labels: ['YES', 'NO', '様子見'],
+    datasets: [{
+        data: [55, 35, 10], // 割合をパーセンテージで設定
+        backgroundColor: ['#42A5F5', '#EF5350', '#B0BEC5'], // 各セクションの色
+        hoverBackgroundColor: ['#64B5F6', '#E57373', '#CFD8DC']
+    }]
+};
+
+// AIデータ (例: YESとNOの割合)
+const aiData = {
+    labels: ['YES', 'NO'],
+    datasets: [{
+        data: [60, 40],
+        backgroundColor: ['#1E88E5', '#C62828'], // YESとNOの色
+        hoverBackgroundColor: ['#1565C0', '#B71C1C']
+    }]
+};
+
+// Chart.jsを使って円グラフを描画する関数
+function createChart(ctx, data) {
+    return new Chart(ctx, {
+        type: 'doughnut', // 円グラフの種類
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom', // 凡例の位置
+                },
+                tooltip: {
+                    enabled: true
+                },
+                datalabels: {
+                    color: '#ffffff',
+                    formatter: (value, context) => {
+                        const sum = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                        const percentage = ((value / sum) * 100).toFixed(1) + '%';
+                        return percentage;
+                    },
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
+
+// ユーザーチャート
+const userCtx = document.getElementById('userChart').getContext('2d');
+createChart(userCtx, userData);
+
+// AIチャート
+const aiCtx = document.getElementById('aiChart').getContext('2d');
+createChart(aiCtx, aiData);
+
         /**
          * イシューの詳細を表示する処理
          * @param {Object} issue - APIから取得したイシュー詳細
