@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>イシュー詳細</title>
+    <link rel="stylesheet" href="/css/styles-issue.css" />
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Data Labels Plugin CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <!-- カテゴリ + フィーチャー表示部分 -->
+            <div class="category-featured">
+                <span class="category issue-category">カテゴリ名</span>
+                <span class="featured" style="display:none;">Featured</span>
+            </div>
+
+            <h1 class="issue-title">イシュータイトル</h1>
+            <div class="author">作成者：<span class="author-name"></span></div>
+        </div>
+
+        <!-- スタッツやシェアボタン等 -->
+        <div class="top-stats-share">
+            <div class="stats">
+                <div class="stat-item like-stat">
+                    <span>いいね: 0</span>
+                    <i class="fas fa-thumbs-up"></i>
+                </div>
+                <div class="stat-item stance-stat">
+                    <span>スタンス投稿数: 0</span>
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+                <div class="stat-item favorite-stat">
+                    <span>お気に入り: 0</span>
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-item comment-stat">
+                    <span>コメント: 0</span>
+                    <i class="fas fa-comments"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 円グラフなど -->
+        <div class="charts">
+            <div class="chart-container">
+                <canvas id="userChart"></canvas>
+                <div class="legend">世論スタンス</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="aiChart"></canvas>
+                <div class="legend">AI評価</div>
+            </div>
+        </div>
+
+        <!-- コメントエリア -->
+        <div class="comments">
+            <!-- 左側：YESコメント -->
+            <div class="comments-side">
+                <h2><i class="fas fa-thumbs-up icon"></i> YES コメント</h2>
+                <div id="yes-comments"></div>
+            </div>
+
+            <!-- 右側：NOコメント -->
+            <div class="comments-side">
+                <h2><i class="fas fa-thumbs-down icon"></i> NO コメント</h2>
+                <div id="no-comments"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URLから issue_id を取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const issueId = urlParams.get('issue_id');
+    
+        if (!issueId) {
+            alert("イシューIDが見つかりませんでした。");
+            throw new Error("Missing issue_id in URL");
+        }
+    
+        // /api/issues/:issue_id からデータを取得 (例: { issue: {...}, comments: [...] })
+        fetch(`/api/issues/${issueId}`)
+            .then(response => {
+                if (!response.ok) throw new Error("Failed to fetch issue details");
+                return response.json();
+            })
+            .then(data => {
+                // data.issue, data.comments を想定
+                displayIssueDetails(data.issue);
+                displayStats(data.issue);  // ←ここを追加し、いいね/スタンス数などを表示
+                displayComments(data.comments, 'yes-comments', 'YES');
+                displayComments(data.comments, 'no-comments', 'NO');
+            })
+            .catch(error => {
+                console.error(error);
+                document.body.innerHTML = '<p>データの取得に失敗しました。</p>';
+            });
+    
+        /**
+         * イシューの詳細を表示する処理
+         * @param {Object} issue - APIから取得したイシュー詳細
+         */
+        function displayIssueDetails(issue) {
+            // カテゴリを表示
+            // もしサーバー側が categories.name AS tag として返すなら issue.tag がカテゴリ名
+            // あるいは issue.category_name など、返却データにあわせて変える
+            document.querySelector('.category').textContent = issue.category_name || '未分類';
+    
+            // Featured のときだけ「Featured」を表示
+            const featuredSpan = document.querySelector('.featured');
+            if (issue.is_featured === 1) {
+                featuredSpan.style.display = 'inline-block';
+            } else {
+                featuredSpan.style.display = 'none';
+            }
+    
+            // イシュータイトル
+            document.querySelector('.issue-title').textContent = issue.headline;
+            // 作成者
+            // サーバーが "issue.author_name" で作成者名を返している想定
+            document.querySelector('.author-name').textContent = issue.author_name || '不明ユーザー';
+    
+            // 作成者を表示 (もし issue.created_by や author_name 等があるなら)
+            // 例: document.querySelector('.author-name').textContent = issue.author_name || '';
+        }
+    // ■ この関数が いいね・スタンス投稿数・お気に入り・コメント数 を更新する
+        function displayStats(issue) {
+                // いいね数
+                const likeSpan = document.querySelector('.like-stat span');
+                if (likeSpan) {
+                    likeSpan.textContent = `いいね: ${issue.likes ?? 0}`;
+                }
+
+                // スタンス投稿数
+                const stanceSpan = document.querySelector('.stance-stat span');
+                if (stanceSpan) {
+                    stanceSpan.textContent = `スタンス投稿数: ${issue.stance_count ?? 0}`;
+                }
+
+                // お気に入り数
+                const favoriteSpan = document.querySelector('.favorite-stat span');
+                if (favoriteSpan) {
+                    // issue.favorite_count という名前でサーバーが返す想定
+                    favoriteSpan.textContent = `お気に入り: ${issue.favorite_count ?? 0}`;
+                }
+
+                // コメント数
+                const commentSpan = document.querySelector('.comment-stat span');
+                if (commentSpan) {
+                    commentSpan.textContent = `コメント: ${issue.comments_count ?? 0}`;
+                }
+            }
+
+        // コメント表示(YES / NO など)
+        function displayComments(comments) {
+            // 例: 分けたいなら2つのコンテナに分けて表示
+        }
+        /**
+         * YES/NOコメントを表示する
+         * @param {Array} comments - スタンスコメント配列
+         * @param {string} containerId - 表示先のコンテナID
+         * @param {string} stanceValue - 'YES' or 'NO'
+         */
+        function displayComments(comments, containerId, stanceValue) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+    
+            container.innerHTML = ''; // 既存のコメントをクリア
+            const filtered = comments.filter(c => c.stance === stanceValue);
+    
+            filtered.forEach(comment => {
+                const div = document.createElement('div');
+                div.className = 'comment';
+                div.innerHTML = `
+                    <div class="comment-header">
+                        <div class="info">
+                            <strong>${comment.username || '名無しさん'}</strong> - ${new Date(comment.created_at).toLocaleString()}
+                        </div>
+                        <div class="likes">
+                            <i class="fas fa-thumbs-up"></i> ${comment.likes || 0}
+                        </div>
+                    </div>
+                    <div class="comment-details">
+                        ${comment.comment || ''}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        </script>
+        <script src="/js/issue-detail.js"></script>
+    </body>
+    </html>

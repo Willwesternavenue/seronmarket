@@ -1,5 +1,7 @@
 // public/js/scripts-top.js
 
+const PORT = 3000;
+
 document.addEventListener('DOMContentLoaded', () => {
     // フィーチャーイシューとその他のイシューをそれぞれ表示
     displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
@@ -171,9 +173,12 @@ function createFeaturedIssueCard(issue) {
  
     return `
         <div class="featured-issue-card ${categoryClass}">
-            <span class="issue-category">${sanitizeHTML(issue.tag)}</span>
+            <span class="issue-category">${sanitizeHTML(issue.category_name)}</span>
             <span class="trending-icon"><i class="fas fa-fire"></i></span>
-            <h4 class="issue-title">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
+            <a href="/issue.html?issue_id=${issue.id}">
+                <h2>${sanitizeHTML(issue.headline)}</h2>
+            </a>
+            <p>${sanitizeHTML(issue.description)}</p>
             <div class="vote-bar-container">
                 <div class="vote-bar-yes" style="width: ${sanitizePercentage(issue.yes_percent)}%;"></div>
                 <div class="vote-bar-no" style="width: ${sanitizePercentage(issue.no_percent)}%;"></div>            </div>
@@ -212,7 +217,7 @@ function createOtherIssueCard(issue) {
 
     return `
         <div class="other-issue-card ${categoryClass}">
-            <span class="issue-category">${sanitizeHTML(issue.tag)}</span>
+            <span class="issue-category">${sanitizeHTML(issue.category_name)}</span>
             <h4 class="issue-title">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
             <div class="vote-bar-container">
                 <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>

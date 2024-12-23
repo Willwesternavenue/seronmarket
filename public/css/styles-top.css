@@ -41,3 +41,25 @@
     margin-bottom: 8px; /* マージンを縮小 */
     display: inline-block;
 }
+#featured-issues .issue-category,
+#existingIssues .issue-category {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    padding: 4px 8px; /* パディングを縮小 */
+    border-radius: var(--border-radius);
+    font-size: 0.7em; /* フォントサイズを縮小 */
+    margin-bottom: 8px; /* マージンを縮小 */
+    display: inline-block;
+}
+.featured-issue-card .issue-category,
+.other-issue-card .issue-category {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    padding: 6px 12px; /* パディングを少し広げる */
+    border-radius: var(--border-radius);
+    font-size: 1.8em; /* フォントサイズを大きくする */
+    margin-bottom: 12px; /* マージンも調整 */
+    font-weight: bold; /* 太字を維持 */
+    display: inline-block;
+    text-align: center; /* 文字を中央揃え */
+}

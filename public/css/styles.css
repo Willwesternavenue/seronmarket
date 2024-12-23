@@ -191,16 +191,6 @@ a:hover {
     margin-bottom: 8px; /* マージンを縮小 */
 }
 
-.featured-issue-card .issue-category {
-    background-color: var(--color-primary);
-    color: var(--color-white);
-    padding: 4px 8px; /* パディングを縮小 */
-    border-radius: var(--border-radius);
-    font-size: 0.7em; /* フォントサイズを縮小 */
-    margin-bottom: 8px; /* マージンを縮小 */
-    display: inline-block;
-}
-
 .featured-issue-card .trending-icon {
     position: absolute;
     top: -10px;
@@ -269,16 +259,6 @@ a:hover {
     color: var(--color-primary);
     font-size: 0.95em; /* フォントサイズを縮小 */
     margin-bottom: 6px; /* マージンを縮小 */
-}
-
-.other-issue-card .issue-category {
-    background-color: var(--color-primary);
-    color: var(--color-white);
-    padding: 4px 8px; /* パディングを縮小 */
-    border-radius: var(--border-radius);
-    font-size: 0.7em; /* フォントサイズを縮小 */
-    margin-bottom: 8px; /* マージンを縮小 */
-    display: inline-block;
 }
 
 .other-issue-card .trending-icon {
@@ -827,4 +807,23 @@ a:hover {
 .category-13 .issue-category {
     background-color: gold;
 }
+.category-14 .issue-category {
+    background-color: darkgreen;
+}
 
+.category-1 .issue-category,
+.category-2 .issue-category,
+.category-3 .issue-category,
+.category-4 .issue-category,
+.category-5 .issue-category,
+.category-6 .issue-category,
+.category-7 .issue-category,
+.category-8 .issue-category,
+.category-9 .issue-category,
+.category-10 .issue-category,
+.category-11 .issue-category,
+.category-12 .issue-category,
+.category-13 .issue-category,
+.category-14 .issue-category {
+    color: #ffffff !important; /* 各カテゴリの文字色を白で固定 */
+}
