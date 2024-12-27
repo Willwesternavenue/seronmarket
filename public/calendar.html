@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025 Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
+            color: #fff;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 20px 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .month {
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .month:nth-child(1) { background: #FFCDD2; }
+        .month:nth-child(2) { background: #F8BBD0; }
+        .month:nth-child(3) { background: #E1BEE7; }
+        .month:nth-child(4) { background: #D1C4E9; }
+        .month:nth-child(5) { background: #C5CAE9; }
+        .month:nth-child(6) { background: #BBDEFB; }
+        .month:nth-child(7) { background: #B3E5FC; }
+        .month:nth-child(8) { background: #B2EBF2; }
+        .month:nth-child(9) { background: #B2DFDB; }
+        .month:nth-child(10) { background: #C8E6C9; }
+        .month:nth-child(11) { background: #DCEDC8; }
+        .month:nth-child(12) { background: #F0F4C3; }
+
+        .month h2 {
+            margin: 10px 0;
+            font-size: 1.5em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .day {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .day.weekday {
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <h1>2025 Calendar</h1>
+    <div class="calendar" id="calendar"></div>
+
+    <script>
+        const calendarElement = document.getElementById('calendar');
+
+        const months = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        function createCalendar() {
+            months.forEach((month, index) => {
+                const monthDiv = document.createElement('div');
+                monthDiv.className = 'month';
+
+                const monthHeader = document.createElement('h2');
+                monthHeader.textContent = month;
+                monthDiv.appendChild(monthHeader);
+
+                const daysDiv = document.createElement('div');
+                daysDiv.className = 'days';
+
+                daysOfWeek.forEach(day => {
+                    const dayElement = document.createElement('div');
+                    dayElement.textContent = day;
+                    dayElement.className = 'day weekday';
+                    daysDiv.appendChild(dayElement);
+                });
+
+                const firstDay = new Date(2025, index, 1).getDay();
+                const totalDays = new Date(2025, index + 1, 0).getDate();
+
+                for (let i = 0; i < firstDay; i++) {
+                    const emptyDay = document.createElement('div');
+                    emptyDay.className = 'day';
+                    daysDiv.appendChild(emptyDay);
+                }
+
+                for (let day = 1; day <= totalDays; day++) {
+                    const dayElement = document.createElement('div');
+                    dayElement.textContent = day;
+                    dayElement.className = 'day';
+                    daysDiv.appendChild(dayElement);
+                }
+
+                monthDiv.appendChild(daysDiv);
+                calendarElement.appendChild(monthDiv);
+            });
+        }
+
+        createCalendar();
+    </script>
+</body>
+</html>
