@@ -50,6 +50,14 @@
 
         document.querySelector('.issue-title').textContent = issue.headline;
         document.querySelector('.author-name').textContent = issue.author_name || '不明な作成者';
+
+        // TOPページリンクを追加
+        const topLinkContainer = document.querySelector('.top-link');
+        if (topLinkContainer) {
+            topLinkContainer.innerHTML = `
+                <a href="/" class="btn-top-link">SERON - TOP</a>
+            `;
+        }
     }
 
     /**
@@ -76,16 +84,17 @@
             const div = document.createElement('div');
             div.className = 'comment';
             div.innerHTML = `
+                <div class="comment-details">
+                <strong>${c.comment || ''}</strong>
+            </div>
+
                 <div class="comment-header">
                     <div class="info">
-                        <strong>${c.username || '名無しさん'}</strong> - ${new Date(c.created_at).toLocaleString()}
+                        ${c.username || '名無しさん'} - ${new Date(c.created_at).toLocaleString()}
                     </div>
                     <div class="likes">
                         <i class="fas fa-thumbs-up"></i> 0
                     </div>
-                </div>
-                <div class="comment-details">
-                    ${c.comment || ''}
                 </div>
             `;
 
