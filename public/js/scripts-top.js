@@ -3,9 +3,11 @@
 const PORT = 3000;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // フィーチャーイシューとその他のイシューをそれぞれ表示
+    //--------------------------------------------------
+    // ① 既存の「フィーチャーイシュー & その他のイシュー」表示処理
+    //--------------------------------------------------
     displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
-    displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard); // 正しいエンドポイントに変更
+    displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard);
 
     // アクションボタンのクリックイベントを登録
     document.addEventListener('click', (event) => {
@@ -33,7 +35,109 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    //--------------------------------------------------
+    // ② 追加するスニペット部分「カテゴリタブ & イシュー表示」のマージ
+    //--------------------------------------------------
+    // もしタブやイシューコンテナが存在しないページの場合は処理をスキップしたい場合などはガード節を入れる。
+    const tabsContainer = document.querySelector('.tabs');
+    if (tabsContainer) {
+        fetchCategories(); // カテゴリタブの生成
+    
+        tabsContainer.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('tab-button')) return;
+    
+            // アクティブ表示の切り替え
+            const currentlyActive = tabsContainer.querySelector('.tab-button.active');
+            if (currentlyActive) {
+                currentlyActive.classList.remove('active');
+            }
+            e.target.classList.add('active');
+    
+            const categoryId = e.target.dataset.category;
+    
+            // 「all」の場合は従来通り全カテゴリ
+            if (categoryId === 'all') {
+                displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
+                displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard);
+            } else {
+                // 選択カテゴリのみ
+                displayIssues(`/api/featured_issues?category_id=${categoryId}`, 'featured-issues', createFeaturedIssueCard);
+                displayIssues(`/api/issues_with_votes?category_id=${categoryId}`, 'existingIssues', createOtherIssueCard);
+            }
+        });
+    }
 });
+
+/**
+ * カテゴリ一覧を取得してタブに表示
+ */
+function fetchCategories() {
+    fetch('/api/categories')
+        .then(handleFetchResponse)
+        .then(categories => {
+            const tabsContainer = document.querySelector('.tabs');
+            if (!tabsContainer) return;
+
+            // 「全て」用ボタンを最初に追加し、active に
+            tabsContainer.innerHTML = ''; // 前回分をクリア
+            const allButton = document.createElement('button');
+            allButton.className = 'tab-button active';
+            allButton.dataset.category = 'all';
+            allButton.textContent = '全て';
+            tabsContainer.appendChild(allButton);
+
+            // 各カテゴリボタン生成
+            categories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'tab-button category-' + category.id;
+                button.dataset.category = category.id;
+                button.textContent = category.name;
+                tabsContainer.appendChild(button);
+            });
+        })
+        .catch(err => console.error('Error fetching categories:', err));
+}
+
+/**
+ * イシューを取得して「issues-container」に表示
+ * @param {number|null} categoryId - フィルタしたいカテゴリID (null の場合は全て)
+ */
+function fetchIssues(categoryId = null) {
+    const endpoint = categoryId 
+        ? `/api/issues?category_id=${categoryId}` 
+        : '/api/issues';
+
+    fetch(endpoint)
+        .then(handleFetchResponse)
+        .then(issues => {
+            const issuesContainer = document.getElementById('issues-container');
+            if (!issuesContainer) return;
+
+            if (!Array.isArray(issues)) {
+                issuesContainer.innerHTML = '<p>イシューの取得に失敗しました。</p>';
+                return;
+            }
+
+            // 表示用HTML
+            issuesContainer.innerHTML = issues.map(issue => `
+                <div class="issue-card">
+                    <h3>${sanitizeHTML(issue.headline)}</h3>
+                    <p>${sanitizeHTML(issue.description)}</p>
+                    <p>カテゴリ: ${sanitizeHTML(issue.category_name) || '未分類'}</p>
+                    <p>作成者: ${sanitizeHTML(issue.created_by) || '不明'}</p>
+                    <p>いいね: ${sanitizeHTML(issue.likes)}</p>
+                </div>
+            `).join('');
+        })
+        .catch(err => {
+            console.error('Error fetching issues:', err);
+            const issuesContainer = document.getElementById('issues-container');
+            if (issuesContainer) {
+                issuesContainer.innerHTML = '<p>イシューの取得に失敗しました。</p>';
+            }
+        });
+}
 
 /**
  * ボタンからアクションを取得
@@ -61,7 +165,7 @@ function handleActionButtonClick(action, issueId, button) {
 
     switch(action) {
         case 'like':
-            endpoint = `/api/issues/${issueId}/like`; // サーバー側エンドポイント
+            endpoint = `/api/issues/${issueId}/like`;
             break;
         case 'stance':
             const userStance = prompt('スタンスを選択してください (YES, NO, 様子見):');
@@ -170,7 +274,7 @@ function createFeaturedIssueCard(issue) {
     const noPercent = sanitizePercentage(issue.no_percent);
     const favoritesCount = issue.favorites || 0;
     const categoryClass = issue.category_id ? `category-${issue.category_id}` : 'category-default';
- 
+
     return `
         <div class="featured-issue-card ${categoryClass}">
             <span class="issue-category">${sanitizeHTML(issue.category_name)}</span>
@@ -180,11 +284,12 @@ function createFeaturedIssueCard(issue) {
             </a>
             <p>${sanitizeHTML(issue.description)}</p>
             <div class="vote-bar-container">
-                <div class="vote-bar-yes" style="width: ${sanitizePercentage(issue.yes_percent)}%;"></div>
-                <div class="vote-bar-no" style="width: ${sanitizePercentage(issue.no_percent)}%;"></div>            </div>
+                <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>
+                <div class="vote-bar-no" style="width: ${noPercent}%;"></div>
+            </div>
             <div class="vote-counts">
-                <span>YES ${sanitizePercentage(issue.yes_percent)}%</span>
-                <span>NO ${sanitizePercentage(issue.no_percent)}%</span>
+                <span>YES ${yesPercent}%</span>
+                <span>NO ${noPercent}%</span>
             </div>
             <div class="action-buttons">
                 <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
@@ -245,7 +350,6 @@ function createOtherIssueCard(issue) {
     `;
 }
 
-
 /**
  * サニタイズ関数
  * @param {string} str - サニタイズする文字列
@@ -264,7 +368,9 @@ function sanitizeHTML(str) {
  */
 function sanitizePercentage(percent) {
     const parsedPercent = parseFloat(percent);
-    return isNaN(parsedPercent) || parsedPercent < 0 ? '0' : parsedPercent.toFixed(1);
+    return isNaN(parsedPercent) || parsedPercent < 0
+        ? '0'
+        : parsedPercent.toFixed(1);
 }
 
 /**
@@ -291,6 +397,7 @@ function handleFetchResponse(response) {
     }
     return response.json();
 }
+
 function displayError(message) {
     const errorContainer = document.getElementById('error-message');
     if (errorContainer) {

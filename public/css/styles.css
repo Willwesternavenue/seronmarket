@@ -872,3 +872,62 @@ a:hover {
     color: black;
     transform: scale(1.1);
 }
+.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.tab-button.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.issue-card {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 10px;
+    background-color: #fff;
+}
+/* =============================
+   カテゴリIDごとのタブ色 (通常時)
+   =============================*/
+   .tab-button[data-category="1"]  { background-color: red;        color: #fff; }
+   .tab-button[data-category="2"]  { background-color: blue;       color: #fff; }
+   .tab-button[data-category="3"]  { background-color: darkgreen;  color: #fff; }
+   .tab-button[data-category="4"]  { background-color: yellow;     color: #000; }
+   .tab-button[data-category="5"]  { background-color: brown;      color: #fff; }
+   .tab-button[data-category="6"]  { background-color: gray;       color: #fff; }
+   .tab-button[data-category="7"]  { background-color: darkcyan;   color: #fff; }
+   .tab-button[data-category="8"]  { background-color: darkorchid; color: #fff; }
+   .tab-button[data-category="9"]  { background-color: darkorange; color: #fff; }
+   .tab-button[data-category="10"] { background-color: purple;     color: #fff; }
+   .tab-button[data-category="11"] { background-color: darkred;    color: #fff; }
+   .tab-button[data-category="12"] { background-color: darkkhaki;  color: #fff; }
+   .tab-button[data-category="13"] { background-color: darkgoldenrod; color: #fff; }
+   .tab-button[data-category="14"] { background-color: darkgreen;  color: #fff; }
+   
+   /* =============================
+      アクティブ時 (さらに強調するなら)
+      =============================*/
+   .tab-button.active[data-category="1"] {
+       background-color: red !important;     /* 上書き */
+       color: #fff;
+   }
+   /* ... 同様に全カテゴリ分 ... */
+   .tab-button.active[data-category="14"] {
+       background-color: darkgreen !important;
+       color: #fff;
+   }
+   

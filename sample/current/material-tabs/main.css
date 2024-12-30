@@ -1,0 +1,71 @@
+/* --- 全体レイアウト --- */
+body {
+    margin: 0;
+    font-family: sans-serif;
+    background: #fafafa;
+  }
+  
+  /* ----------------------------
+     タブコンテナを複数行にする
+     flex-wrap: wrap;
+  ---------------------------- */
+  .tabs-container {
+    display: flex;
+    flex-wrap: wrap;    /* 折り返しを可能に */
+    gap: 12px;
+    justify-content: center;
+    margin: 20px;
+    padding: 0 10px;    /* 横に余白を足しておくと折り返しやすい */
+  }
+  
+  /* --- Material風下線アニメーション (横書き) --- */
+  .tab-button {
+    position: relative;
+    padding: 10px 20px;
+    background: #f9f9f9;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    border-radius: 4px;
+    transition: color 0.3s ease;
+    outline: none; 
+    white-space: nowrap;         /* 折り返さずにボタンが広がる */
+    writing-mode: horizontal-tb; /* 念のため縦書きを解除 */
+  }
+  
+  .tab-button::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 0;
+    height: 2px;
+    background-color: #007bff; /* 下線色デフォルト */
+    transition: width 0.3s ease;
+  }
+  
+  .tab-button:hover {
+    color: #007bff;
+  }
+  .tab-button:hover::after {
+    width: 100%;
+  }
+  
+  .tab-button.active {
+    color: #007bff;
+  }
+  .tab-button.active::after {
+    width: 100%;
+  }
+  
+  /* もしカテゴリごとに色を変えたい場合は、属性セレクタを使って
+     このように設定すればOK (例):
+  
+  .tab-button[data-category="1"] {
+    --underline-color: red;
+  }
+  ...
+  */
+  

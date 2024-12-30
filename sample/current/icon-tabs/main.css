@@ -1,0 +1,49 @@
+/* --- 全体レイアウト --- */
+body {
+    margin: 0;
+    font-family: sans-serif;
+    background: #fff;
+  }
+  
+  /* タブコンテナ */
+  .icon-tabs {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap; /* 画面幅が小さい時に折り返し */
+    gap: 15px;
+    margin: 20px 0;
+  }
+  
+  /* アイコン＆文字を横並びで配置 */
+  .icon-tab-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px; /* アイコンと文字の間隔 */
+    padding: 10px 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    font-size: 14px;
+    outline: none;
+  }
+  
+  .icon-tab-button i {
+    font-size: 16px; /* アイコンサイズ */
+  }
+  
+  /* ホバー時: 少し拡大 & 影 */
+  .icon-tab-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  
+  /* アクティブ時 */
+  .icon-tab-button.active {
+    background-color: #007bff;
+    color: #fff;
+    border-color: #007bff;
+  }
+  

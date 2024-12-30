@@ -255,30 +255,54 @@ app.get('/debug-session', (req, res) => {
 });
 
 
-// すべてのイシュー取得
+// --- APIエンドポイント ---
+// カテゴリ別のイシューを取得
 app.get('/api/issues', (req, res) => {
-    const sql = `
-        SELECT
-            issues.id,
-            issues.headline,
-            issues.description,
-            issues.category_id,
+    const categoryId = req.query.category_id; // クエリパラメータからカテゴリIDを取得
+
+    let sql = `
+        SELECT 
+            issues.id, 
+            issues.headline, 
+            issues.description, 
+            issues.likes, 
+            issues.is_featured,
             categories.name AS category_name,
-            users.username AS author_name,
-            issues.likes
-        FROM
-            issues
+            users.username AS created_by
+        FROM issues
         LEFT JOIN categories ON issues.category_id = categories.id
         LEFT JOIN users ON issues.created_by = users.id
     `;
-    db.all(sql, [], (err, rows) => {
+    const params = [];
+
+    // カテゴリIDが指定されている場合にフィルタリング
+    if (categoryId) {
+        sql += ' WHERE issues.category_id = ?';
+        params.push(categoryId);
+    }
+
+    db.all(sql, params, (err, rows) => {
         if (err) {
-            console.error('Error fetching issues:', err);
+            console.error('Database error:', err);
             return res.status(500).json({ error: 'Failed to fetch issues' });
         }
         res.json(rows);
     });
 });
+
+// カテゴリ一覧を取得
+app.get('/api/categories', (req, res) => {
+    const sql = 'SELECT id, name FROM categories';
+
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Failed to fetch categories' });
+        }
+        res.json(rows);
+    });
+});
+
 // --- 認証系エンドポイント ---
 
 // 新規ユーザー登録
@@ -708,7 +732,10 @@ app.post('/api/issues/:id/comment', isAuthenticated, (req, res) => {
 // フィーチャー・イシュー一覧
 // =========================
 app.get('/api/featured_issues', (req, res) => {
-    const sql = `
+    const categoryId = req.query.category_id; // 例: /api/featured_issues?category_id=2
+    const params = [];
+
+    let sql = `
         SELECT 
             issues.id,
             issues.headline,
@@ -731,6 +758,16 @@ app.get('/api/featured_issues', (req, res) => {
         LEFT JOIN categories ON issues.category_id = categories.id
         LEFT JOIN users ON issues.created_by = users.id
         WHERE issues.is_featured = 1
+    `;
+
+    // カテゴリ指定があれば追加
+    if (categoryId) {
+        sql += ' AND issues.category_id = ?';
+        params.push(categoryId);
+    }
+
+    // GROUP BY (集計)
+    sql += `
         GROUP BY 
             issues.id, 
             issues.headline, 
@@ -738,9 +775,10 @@ app.get('/api/featured_issues', (req, res) => {
             issues.category_id, 
             categories.name, 
             users.username, 
-            issues.likes;
+            issues.likes
     `;
-    db.all(sql, [], (err, issues) => {
+
+    db.all(sql, params, (err, issues) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'Failed to fetch featured issues.' });
@@ -765,7 +803,7 @@ app.get('/api/featured_issues', (req, res) => {
                 no_percent: noPercent.toFixed(1),
                 maybe_percent: maybePercent.toFixed(1),
                 stance_count: issue.stance_count || 0,
-                comments: issue.comments_count || 0
+                comments_count: issue.comments_count || 0
             };
         });
 
@@ -773,12 +811,14 @@ app.get('/api/featured_issues', (req, res) => {
     });
 });
 
-
 // =========================
 // イシュー一覧 (スタンス含む, votes)
 // =========================
 app.get('/api/issues_with_votes', (req, res) => {
-    const sql = `
+    const categoryId = req.query.category_id;
+    const params = [];
+
+    let sql = `
         SELECT
             issues.id,
             issues.headline,
@@ -801,31 +841,42 @@ app.get('/api/issues_with_votes', (req, res) => {
         LEFT JOIN categories ON issues.category_id = categories.id
         LEFT JOIN users ON issues.created_by = users.id
         WHERE issues.is_featured = 0
-        GROUP BY issues.id, users.username;
     `;
-    db.all(sql, [], (err, rows) => {
+
+    if (categoryId) {
+        sql += ' AND issues.category_id = ?';
+        params.push(categoryId);
+    }
+
+    sql += `
+        GROUP BY 
+            issues.id, users.username
+    `;
+
+    db.all(sql, params, (err, rows) => {
         if (err) {
             console.error('Error fetching issues with votes:', err);
             return res.status(500).json({ error: 'Failed to fetch issues with votes' });
         }
         const mapped = rows.map(issue => {
             const totalVotes = (issue.yes_count || 0) + (issue.no_count || 0) + (issue.maybe_count || 0);
-            let yes_percent = 0, no_percent = 0;
+            let yesPercent = 0, noPercent = 0;
             if (totalVotes > 0) {
-                yes_percent = (issue.yes_count / totalVotes) * 100;
-                no_percent = (issue.no_count / totalVotes) * 100;
+                yesPercent = (issue.yes_count / totalVotes) * 100;
+                noPercent = (issue.no_count / totalVotes) * 100;
             }
             return {
                 ...issue,
-                yes_percent: yes_percent.toFixed(1),
-                no_percent: no_percent.toFixed(1),
+                yes_percent: yesPercent.toFixed(1),
+                no_percent: noPercent.toFixed(1),
                 stance_count: issue.stance_count || 0,
-                comments: issue.comments_count || 0
+                comments_count: issue.comments_count || 0
             };
         });
         res.json(mapped);
     });
 });
+
 
 // =========================
 // 管理者用イシュー一覧
