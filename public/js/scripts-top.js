@@ -3,65 +3,43 @@
 const PORT = 3000;
 
 document.addEventListener('DOMContentLoaded', () => {
-    //--------------------------------------------------
-    // ① 既存の「フィーチャーイシュー & その他のイシュー」表示処理
-    //--------------------------------------------------
+    //
+    // 1) 初期表示：フィーチャーイシュー & その他のイシューを表示
+    //
     displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
     displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard);
 
-    // アクションボタンのクリックイベントを登録
-    document.addEventListener('click', (event) => {
-        const button = event.target.closest('.action-buttons button');
-        if (button) {
-            const action = getActionFromButton(button);
-            const issueId = button.dataset.issueId;
+    //
+    // 2) アクションボタンのクリック & キーボード操作に対応
+    //
+    document.addEventListener('click', handleActionButtonClickEvent);
+    document.addEventListener('keypress', handleActionButtonKeyPress);
 
-            if (action && issueId) {
-                handleActionButtonClick(action, issueId, button);
-            }
-        }
-    });
-
-    // キーボード操作の対応
-    document.addEventListener('keypress', (event) => {
-        const button = event.target.closest('.action-buttons button');
-        if (button && (event.key === 'Enter' || event.key === ' ')) {
-            event.preventDefault();
-            const action = getActionFromButton(button);
-            const issueId = button.dataset.issueId;
-
-            if (action && issueId) {
-                handleActionButtonClick(action, issueId, button);
-            }
-        }
-    });
-
-    //--------------------------------------------------
-    // ② 追加するスニペット部分「カテゴリタブ & イシュー表示」のマージ
-    //--------------------------------------------------
-    // もしタブやイシューコンテナが存在しないページの場合は処理をスキップしたい場合などはガード節を入れる。
+    //
+    // 3) カテゴリタブ生成＆タブ切り替え処理
+    //
     const tabsContainer = document.querySelector('.tabs');
     if (tabsContainer) {
         fetchCategories(); // カテゴリタブの生成
-    
+
+        // タブをクリックしたらイシュー表示を切り替える
         tabsContainer.addEventListener('click', (e) => {
             if (!e.target.classList.contains('tab-button')) return;
-    
-            // アクティブ表示の切り替え
-            const currentlyActive = tabsContainer.querySelector('.tab-button.active');
-            if (currentlyActive) {
-                currentlyActive.classList.remove('active');
+            
+            // アクティブ状態の切り替え
+            const activeTab = tabsContainer.querySelector('.tab-button.active');
+            if (activeTab) {
+                activeTab.classList.remove('active');
             }
             e.target.classList.add('active');
-    
+
             const categoryId = e.target.dataset.category;
-    
-            // 「all」の場合は従来通り全カテゴリ
+
+            // "all" 選択なら全件表示、それ以外はカテゴリフィルタ
             if (categoryId === 'all') {
                 displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
                 displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard);
             } else {
-                // 選択カテゴリのみ
                 displayIssues(`/api/featured_issues?category_id=${categoryId}`, 'featured-issues', createFeaturedIssueCard);
                 displayIssues(`/api/issues_with_votes?category_id=${categoryId}`, 'existingIssues', createOtherIssueCard);
             }
@@ -70,7 +48,39 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * カテゴリ一覧を取得してタブに表示
+ * アクションボタンのクリック処理
+ */
+function handleActionButtonClickEvent(event) {
+    const button = event.target.closest('.action-buttons button');
+    if (!button) return;
+
+    const action = getActionFromButton(button);
+    const issueId = button.dataset.issueId;
+    if (action && issueId) {
+        handleActionButtonClick(action, issueId, button);
+    }
+}
+
+/**
+ * アクションボタンのキーボード操作
+ */
+function handleActionButtonKeyPress(event) {
+    const button = event.target.closest('.action-buttons button');
+    if (!button) return;
+
+    // Enter または Space のときアクション実行
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        const action = getActionFromButton(button);
+        const issueId = button.dataset.issueId;
+        if (action && issueId) {
+            handleActionButtonClick(action, issueId, button);
+        }
+    }
+}
+
+/**
+ * カテゴリ一覧を取得してタブを生成
  */
 function fetchCategories() {
     fetch('/api/categories')
@@ -79,18 +89,18 @@ function fetchCategories() {
             const tabsContainer = document.querySelector('.tabs');
             if (!tabsContainer) return;
 
-            // 「全て」用ボタンを最初に追加し、active に
-            tabsContainer.innerHTML = ''; // 前回分をクリア
+            // 初期状態（全て）ボタンをクリアして再生成
+            tabsContainer.innerHTML = '';
             const allButton = document.createElement('button');
             allButton.className = 'tab-button active';
             allButton.dataset.category = 'all';
-            allButton.textContent = '全て';
+            allButton.textContent = '全カテゴリ';
             tabsContainer.appendChild(allButton);
 
-            // 各カテゴリボタン生成
+            // APIで取得したカテゴリをタブに追加
             categories.forEach(category => {
                 const button = document.createElement('button');
-                button.className = 'tab-button category-' + category.id;
+                button.className = `tab-button category-${category.id}`;
                 button.dataset.category = category.id;
                 button.textContent = category.name;
                 tabsContainer.appendChild(button);
@@ -98,6 +108,7 @@ function fetchCategories() {
         })
         .catch(err => console.error('Error fetching categories:', err));
 }
+
 
 /**
  * イシューを取得して「issues-container」に表示

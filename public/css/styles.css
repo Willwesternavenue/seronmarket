@@ -782,7 +782,7 @@ a:hover {
     background-color: darkgreen;
 }
 .category-4 .issue-category {
-    background-color: yellow;
+    background-color: yellowgreen;
 }
 .category-5 .issue-category {
     background-color: brown;
@@ -812,7 +812,7 @@ a:hover {
     background-color: darkgoldenrod;
 }
 .category-14 .issue-category {
-    background-color: darkgreen;
+    background-color: darkolivegreen;
 }
 
 .category-1 .issue-category,
@@ -872,62 +872,137 @@ a:hover {
     color: black;
     transform: scale(1.1);
 }
+/* --- もし既存の .tabs にスタイルがあるなら、そこに上書きする形で追加 --- */
+
+/* タブコンテナ: flex + wrap */
 .tabs {
     display: flex;
+    flex-wrap: wrap;     /* 折り返しを可能にする */
+    gap: 12px;
     justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
+    margin: 20px 0;
+    padding: 0 10px;     /* 横に余白を入れる (お好みで) */
 }
 
+/* タブボタン (Material風下線アニメ) */
 .tab-button {
+    position: relative;
     padding: 10px 20px;
-    background-color: #f0f0f0;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    background: #f4f4f4;
+    border: none;
     cursor: pointer;
-    transition: background-color 0.3s;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    border-radius: 4px;
+    transition: color 0.3s ease;
+    outline: none;
+    white-space: nowrap;         /* 文字が折り返されず横並びになる */
+    writing-mode: horizontal-tb; /* 念のため縦書き解除 */
+    /* デフォルト下線色をカスタムプロパティとして定義 */
+    --underline-color: #007bff; 
 }
 
+/* 下線のアニメーション */
+.tab-button::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 0;
+    height: 2px;
+
+    background-color: var(--underline-color);
+    transition: width 0.3s ease;
+}
+.tab-button:hover {
+    color: var(--underline-color);
+}
+.tab-button:hover::after {
+    width: 100%;
+}
+
+/* アクティブ状態 */
 .tab-button.active {
-    background-color: #007bff;
-    color: white;
+    color: var(--underline-color);
+}
+.tab-button.active::after {
+    width: 100%;
 }
 
-.issue-card {
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 15px;
-    margin-bottom: 10px;
-    background-color: #fff;
-}
 /* =============================
    カテゴリIDごとのタブ色 (通常時)
    =============================*/
-   .tab-button[data-category="1"]  { background-color: red;        color: #fff; }
-   .tab-button[data-category="2"]  { background-color: blue;       color: #fff; }
-   .tab-button[data-category="3"]  { background-color: darkgreen;  color: #fff; }
-   .tab-button[data-category="4"]  { background-color: yellow;     color: #000; }
-   .tab-button[data-category="5"]  { background-color: brown;      color: #fff; }
-   .tab-button[data-category="6"]  { background-color: gray;       color: #fff; }
-   .tab-button[data-category="7"]  { background-color: darkcyan;   color: #fff; }
-   .tab-button[data-category="8"]  { background-color: darkorchid; color: #fff; }
-   .tab-button[data-category="9"]  { background-color: darkorange; color: #fff; }
-   .tab-button[data-category="10"] { background-color: purple;     color: #fff; }
-   .tab-button[data-category="11"] { background-color: darkred;    color: #fff; }
-   .tab-button[data-category="12"] { background-color: darkkhaki;  color: #fff; }
-   .tab-button[data-category="13"] { background-color: darkgoldenrod; color: #fff; }
-   .tab-button[data-category="14"] { background-color: darkgreen;  color: #fff; }
+   .tab-button[data-category="1"]  { background-color: #f4f4f4;        color: #464646; --underline-color: red;}
+   .tab-button[data-category="2"]  { background-color: #f4f4f4;       color: #464646; --underline-color: blue;}
+   .tab-button[data-category="3"]  { background-color: #f4f4f4;  color: #464646; --underline-color: darkgreen;}
+   .tab-button[data-category="4"]  { background-color: #f4f4f4;     color: #464646; --underline-color: yellowgreen;}
+   .tab-button[data-category="5"]  { background-color: #f4f4f4;      color: #464646; --underline-color: brown;}
+   .tab-button[data-category="6"]  { background-color: #f4f4f4;       color: #464646; --underline-color: gray;}
+   .tab-button[data-category="7"]  { background-color: #f4f4f4;   color: #464646; --underline-color: darkcyan;}
+   .tab-button[data-category="8"]  { background-color: #f4f4f4; color: #464646; --underline-color: darkorchid;}
+   .tab-button[data-category="9"]  { background-color: #f4f4f4; color: #464646; --underline-color: darkorange;}
+   .tab-button[data-category="10"] { background-color: #f4f4f4;     color: #464646; --underline-color: purple;}
+   .tab-button[data-category="11"] { background-color: #f4f4f4;    color: #464646; --underline-color: darkred;}
+   .tab-button[data-category="12"] { background-color: #f4f4f4;  color: #464646; --underline-color: darkkhaki;}
+   .tab-button[data-category="13"] { background-color: #f4f4f4; color: #464646; --underline-color: darkgoldenrod;}
+   .tab-button[data-category="14"] { background-color: #f4f4f4;  color: #464646; --underline-color: darkolivegreen;}
    
-   /* =============================
-      アクティブ時 (さらに強調するなら)
-      =============================*/
-   .tab-button.active[data-category="1"] {
-       background-color: red !important;     /* 上書き */
-       color: #fff;
-   }
-   /* ... 同様に全カテゴリ分 ... */
-   .tab-button.active[data-category="14"] {
-       background-color: darkgreen !important;
-       color: #fff;
-   }
-   
+/* ホバー/アクティブで背景を変えたい場合は別途追加してもOK */
+.tab-button.active[data-category="1"] {
+    background-color: red; 
+    color: white;               /* 文字を白に */
+}
+.tab-button.active[data-category="2"] {
+    background-color: blue; 
+    color: white;              
+}
+.tab-button.active[data-category="3"] {
+    background-color: darkgreen; 
+    color: white;               
+}
+.tab-button.active[data-category="4"] {
+    background-color: yellowgreen; 
+    color: white;               
+}
+.tab-button.active[data-category="5"] {
+    background-color: brown; 
+    color: white;               
+}
+.tab-button.active[data-category="6"] {
+    background-color: gray; 
+    color: white;            
+}
+.tab-button.active[data-category="7"] {
+    background-color: darkcyan; 
+    color: white;               
+}
+.tab-button.active[data-category="8"] {
+    background-color: darkorchid; 
+    color: white;              
+}
+.tab-button.active[data-category="9"] {
+    background-color: darkorange; 
+    color: white;              
+}
+.tab-button.active[data-category="10"] {
+    background-color: purple; 
+    color: white;               
+}
+.tab-button.active[data-category="11"] {
+    background-color: darkred; 
+    color: white;              
+}
+.tab-button.active[data-category="12"] {
+    background-color: darkkhaki; 
+    color: white;             
+}
+.tab-button.active[data-category="13"] {
+    background-color: darkgoldenrod; 
+    color: white;              
+}
+.tab-button.active[data-category="14"] {
+    background-color: darkolivegreen; 
+    color: white;              
+}
+

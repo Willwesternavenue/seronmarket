@@ -209,8 +209,3 @@
     display: inline-block;
     margin-bottom: 12px;
 }
-.issue-category {
-    font-size: 1.2em; /* フォントサイズを大きく */
-    font-weight: bold; /* 太字にする */
-    text-align: center; /* 文字を中央揃え */
-}
