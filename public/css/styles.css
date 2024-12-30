@@ -950,59 +950,59 @@ a:hover {
    
 /* ホバー/アクティブで背景を変えたい場合は別途追加してもOK */
 .tab-button.active[data-category="1"] {
-    background-color: red; 
-    color: white;               /* 文字を白に */
+    background-color: #f4f4f4; 
+    color: red;               /* 文字を白に */
 }
 .tab-button.active[data-category="2"] {
-    background-color: blue; 
-    color: white;              
+    background-color: #f4f4f4; 
+    color: blue;              
 }
 .tab-button.active[data-category="3"] {
-    background-color: darkgreen; 
-    color: white;               
+    background-color: #f4f4f4; 
+    color: darkgreen;               
 }
 .tab-button.active[data-category="4"] {
-    background-color: yellowgreen; 
-    color: white;               
+    background-color: #f4f4f4; 
+    color: yellowgreen;               
 }
 .tab-button.active[data-category="5"] {
-    background-color: brown; 
-    color: white;               
+    background-color: #f4f4f4; 
+    color: brown;               
 }
 .tab-button.active[data-category="6"] {
-    background-color: gray; 
-    color: white;            
+    background-color: #f4f4f4; 
+    color: gray;            
 }
 .tab-button.active[data-category="7"] {
-    background-color: darkcyan; 
-    color: white;               
+    background-color: #f4f4f4; 
+    color: darkcyan;               
 }
 .tab-button.active[data-category="8"] {
-    background-color: darkorchid; 
-    color: white;              
+    background-color: #f4f4f4; 
+    color: darkorchid;              
 }
 .tab-button.active[data-category="9"] {
-    background-color: darkorange; 
-    color: white;              
+    background-color: #f4f4f4; 
+    color: darkorange;              
 }
 .tab-button.active[data-category="10"] {
-    background-color: purple; 
-    color: white;               
+    background-color: #f4f4f4; 
+    color: purple;               
 }
 .tab-button.active[data-category="11"] {
-    background-color: darkred; 
-    color: white;              
+    background-color: #f4f4f4; 
+    color: darkred;              
 }
 .tab-button.active[data-category="12"] {
-    background-color: darkkhaki; 
-    color: white;             
+    background-color: #f4f4f4; 
+    color: darkkhaki;             
 }
 .tab-button.active[data-category="13"] {
-    background-color: darkgoldenrod; 
-    color: white;              
+    background-color: #f4f4f4; 
+    color: darkgoldenrod;              
 }
 .tab-button.active[data-category="14"] {
-    background-color: darkolivegreen; 
-    color: white;              
+    background-color: #f4f4f4; 
+    color: darkolivegreen;              
 }
 
