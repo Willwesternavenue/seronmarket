@@ -20,6 +20,7 @@
         <div class="profile-container">
             <div class="image-container">
                 <img src="/css/images.png" alt="プロフィール画像" class="mypage-image">
+                <h5>編集</h5>
                 <h3>ようこそ、<span id="username">ユーザー名</span>さん</h3>
             </div>
     
@@ -33,80 +34,82 @@
             <div class="profile-row">
                 <label for="coinsInput">作成したイシューの数: XXX 件</label>
             </div>
-            
-            <div class="profile-row-left">
-                <label for="displayNameInput">表示名：
-                <input
-                    type="text"
-                    id="displayNameInput"
-                    placeholder="名前入力(最大12文字)"
-                    aria-label="名前入力"
-                /></label>
-            </div>
-            <div class="profile-row-left">
-                <label for="introInput">紹介文：</br>
-                    <textarea
-                        id="introInput"
-                        placeholder="紹介文入力(最大40文字)"
-                        aria-label="紹介文入力"
-                    ></textarea>
-                </label>
-            </div>
-            <div class="profile-row-left">
-                <label for="displayNameInput">専門分野：</label>
-                <div class="form-group">
-                    <label for="tag1">カテゴリ1:</label>
-                    <select id="tag1" name="tag" class="form-control" required>
-                        <option value="">選択してください</option>
-                        <!-- カテゴリがJavaScriptで動的に挿入されます -->
-                    </select>
+            <div class ="section">
+
+                <div class="profile-row-left">
+                    <label for="displayNameInput">表示名：
+                    <input
+                        type="text"
+                        id="displayNameInput"
+                        placeholder="名前入力(最大12文字)"
+                        aria-label="名前入力"
+                    /></label>
+                </div>
+                <div class="profile-row-left">
+                    <label for="introInput">紹介文：</br>
+                        <textarea
+                            id="introInput"
+                            placeholder="紹介文入力(最大40文字)"
+                            aria-label="紹介文入力"
+                        ></textarea>
+                    </label>
+                </div>
+                <div class="profile-row-left">
+                    <label for="displayNameInput">専門分野：</label>
                     <div class="form-group">
-                        <label for="tag2">カテゴリ2:</label>
-                        <select id="tag2" name="tag" class="form-control" required>
+                        <label for="tag1">カテゴリ1:</label>
+                        <select id="tag1" name="tag" class="form-control" required>
                             <option value="">選択してください</option>
                             <!-- カテゴリがJavaScriptで動的に挿入されます -->
                         </select>
-    
+                        <div class="form-group">
+                            <label for="tag2">カテゴリ2:</label>
+                            <select id="tag2" name="tag" class="form-control" required>
+                                <option value="">選択してください</option>
+                                <!-- カテゴリがJavaScriptで動的に挿入されます -->
+                            </select>
+        
+                    </div>
+                <div class="profile-row-left">
+                    <label for="displayNameInput">関心分野：</label>
+                    <input
+                        type="text"
+                        id="displayNameInput"
+                        placeholder="最大３つ"
+                        aria-label="名前入力"
+                    />
                 </div>
-            <div class="profile-row-left">
-                <label for="displayNameInput">関心分野：</label>
-                <input
-                    type="text"
-                    id="displayNameInput"
-                    placeholder="最大３つ"
-                    aria-label="名前入力"
-                />
-            </div>
-            <div class="profile-row-left">
-                <label for="youtubeAccount">YouTube：youtube.com/@
-                <input
-                    type="text"
-                    id="youtubeAccount-left"
-                    placeholder="チャンネルID"
-                    aria-label="YouTubeアカウント名"
-                /></label>
-            </div>
-            <div class="profile-row-left">
-                <label for="xAccount">X (旧Twitter)：＠
-                <input
-                    type="text"
-                    id="xAccount"
-                    placeholder="X アカウント名"
-                    aria-label="X アカウント名"
-                /></label>
-            </div>
-            <div class="profile-row-left">
-                <label for="blogUrl">Note：note.com/
-                <input
-                    type="text"
-                    id="blogUrl"
-                    placeholder="ID#"
-                    aria-label="ブログURL"
-                /></label>
-            </div>
-            <div class="button-row">
-                <button type="submit">更新</button>
-            </div>
+                <div class="profile-row-left">
+                    <label for="youtubeAccount">YouTube：youtube.com/@
+                    <input
+                        type="text"
+                        id="youtubeAccount-left"
+                        placeholder="チャンネルID"
+                        aria-label="YouTubeアカウント名"
+                    /></label>
+                </div>
+                <div class="profile-row-left">
+                    <label for="xAccount">X (旧Twitter)：＠
+                    <input
+                        type="text"
+                        id="xAccount"
+                        placeholder="X アカウント名"
+                        aria-label="X アカウント名"
+                    /></label>
+                </div>
+                <div class="profile-row-left">
+                    <label for="blogUrl">Note：note.com/
+                    <input
+                        type="text"
+                        id="blogUrl"
+                        placeholder="ID#"
+                        aria-label="ブログURL"
+                    /></label>
+                </div>
+                <div class="button-row">
+                    <button type="submit">更新</button>
+                </div>
+            </div>    
         </div>
     </div>
     
@@ -173,7 +176,9 @@
         <h3>フォロー中のイシュー</h3>
         <div id="existingIssues"></div>
     </div>
-
+    <div class="footer">
+        <h5>SERON EXCHANGE 2025 All Rights Reserved.</h5>
+    </div>    
     <script src="/js/scripts-mypage.js" defer></script> <!-- スクリプトのパスを修正 -->
 </body>
 </html>

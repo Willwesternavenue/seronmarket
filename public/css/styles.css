@@ -920,6 +920,25 @@ max-height: calc(1.4em * 2);       /* 2行分の高さ (行数に合わせて計
 .tab-button.active::after {
     width: 100%;
 }
+/* =============================
+    フッター
+   =============================*/
+
+.footer {
+    display: flex;         /* フレックスボックスを使用 */
+    justify-content: center; /* 水平方向に中央揃え */
+    align-items: center;   /* 垂直方向に中央揃え */
+    text-align: center;    /* テキストを中央揃え */
+    padding: 10px;         /* 上下余白を追加 */
+    background-color: #f8f9fa; /* 背景色を設定（必要なら） */
+}
+
+.footer h5 {
+    margin: 0;             /* 上下マージンをリセット */
+    font-size: 14px;       /* 必要に応じてフォントサイズを調整 */
+    color: #555;           /* テキスト色を変更（必要なら） */
+}
+
 
 /* =============================
    カテゴリIDごとのタブ色 (通常時)
