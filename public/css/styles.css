@@ -146,14 +146,39 @@ a:hover {
    Card Styles
 ----------------------------------- */
 /* Common Card Styles */
-.card,
-.featured-issue-card,
-.other-issue-card {
+.card {
     background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 10px;
+    box-shadow: 0 2px 4px var(--color-shadow);
+    margin-bottom: 20px;
+}
+.featured-issue-card{
+    background-color: var(--color-white);
+    width: 300px;
+    box-sizing: border-box; /* 念のため指定 */
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius);
     padding: 10px; /* パディングを縮小 */
     box-shadow: 0 2px 4px var(--color-shadow);
+    flex: 1 1 calc(33.333% - 30px);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: left;
+    transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+}
+.other-issue-card{
+    background-color: var(--color-white);
+    width: 200px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 10px 15px; /* パディングを縮小 */
+    box-shadow: 0 2px 4px var(--color-shadow);
+    flex: 1 1 calc(33.333% - 30px);
+    box-sizing: border-box; /* 念のため指定 */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -161,13 +186,27 @@ a:hover {
     transition: transform var(--transition-speed), box-shadow var(--transition-speed);
 }
 
-.card:hover,
 .featured-issue-card:hover,
 .other-issue-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 4px 8px var(--color-shadow);
 }
-
+.issue-title {
+    white-space: normal; 
+    word-break: break-word;       /* または break-all; */
+    overflow-wrap: break-word;    /* ブラウザによっては必須 */
+  }
+.multiline-ellipsis {
+display: -webkit-box;               /* 必須: flexbox ではなく "-webkit-box" を使う */
+-webkit-box-orient: vertical;       /* 縦方向にテキストを積むレイアウト */
+-webkit-line-clamp: 2;             /* 表示したい行数 */
+overflow: hidden;                   /* はみ出した部分は非表示 */
+text-overflow: ellipsis;           /* 省略記号 "…" を表示 */
+line-height: 1.4em;                /* 行の高さ */
+max-height: calc(1.4em * 2);       /* 2行分の高さ (行数に合わせて計算) */
+/* 必要に応じて "word-break: break-word;" なども追加 */
+}
+  
 /* -----------------------------------
    Featured Issue Card Styles
 ----------------------------------- */
@@ -176,8 +215,8 @@ a:hover {
     background-color: #fff; /* Light background */
     position: relative;
     box-sizing: border-box;
-    padding: 10px 15px; /* パディングを縮小 */
-    margin: 8px 0; /* マージンを縮小 */
+    min-height: 300px; /* 必要なら設定 */
+    padding: 10px; /* パディングを縮小 */
 }
 
 .featured-issue-card::before {
@@ -190,6 +229,9 @@ a:hover {
 }
 
 .featured-issue-card h4.issue-title {
+    white-space: normal;       /* 通常の折り返しを有効化 */
+    overflow-wrap: break-word; /* 単語途中でも折り返し可能に */
+    word-break: break-word;    /* (ブラウザによっては必須) */
     color: var(--color-primary);
     font-size: 1em; /* フォントサイズを縮小 */
     margin-bottom: 8px; /* マージンを縮小 */
@@ -270,14 +312,18 @@ a:hover {
     background-color: var(--color-white);
     box-sizing: border-box;
     padding: 10px 15px; /* パディングを縮小 */
-    margin: 8px 0; /* マージンを縮小 */
     position: relative;
+    min-height: 200px; /* 必要なら設定 */
+    display: flex;
 }
 
 .other-issue-card h4.issue-title {
     color: var(--color-primary);
     font-size: 0.95em; /* フォントサイズを縮小 */
     margin-bottom: 6px; /* マージンを縮小 */
+    white-space: normal;       /* 通常の折り返しを有効化 */
+    overflow-wrap: break-word; /* 単語途中でも折り返し可能に */
+    word-break: break-word;    /* (ブラウザによっては必須) */
 }
 
 .other-issue-card .trending-icon {
@@ -406,27 +452,29 @@ a:hover {
     gap: 15px;
     justify-content: center;
     margin-top: 20px;
+    align-items: stretch; /* 高さを自動的に揃える */
 }
 
 /* Responsive Featured and Other Issue Cards */
 @media (max-width: 1200px) {
     .featured-issue-card,
     .other-issue-card {
-        width: calc(33.333% - 30px);
+        flex: 1 1 calc(33.333% - 30px); /* 同じ指定を上書きするなら不要 */
     }
 }
 
 @media (max-width: 800px) {
     .featured-issue-card,
     .other-issue-card {
-        width: calc(50% - 30px);
+        flex: 1 1 calc(50% - 30px);
     }
 }
 
 @media (max-width: 500px) {
     .featured-issue-card,
     .other-issue-card {
-        width: 100%;
+        flex: 1 1 100%;
+        min-width: auto;
     }
 }
 
@@ -702,7 +750,6 @@ a:hover {
         margin-top: 10px;
     }
 
-    .card,
     .featured-issue-card,
     .other-issue-card {
         width: 100%;
@@ -713,36 +760,6 @@ a:hover {
     .navbar-register a {
         margin-left: 0;
         margin-top: 10px;
-    }
-}
-
-/* -----------------------------------
-   Mypage Section Adjustments
------------------------------------ */
-.mypage-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    background-color: var(--color-white);
-    border-radius: var(--border-radius);
-    box-shadow: 0 2px 4px var(--color-shadow);
-    margin-top: 20px;
-}
-
-@media (min-width: 768px) {
-    .mypage-section {
-        flex-direction: row;
-        align-items: flex-start;
-    }
-
-    .mypage-section .image-container {
-        flex: 1;
-        margin-right: 20px;
-    }
-
-    .mypage-section .content-container {
-        flex: 2;
     }
 }
 
@@ -874,17 +891,17 @@ a:hover {
 
 /* ボタンスタイルを小さく調整 */
 .hero-link {
-    color: white;
-    font-size: 14px; /* フォントサイズを小さくする */
+    color: blue;
+    font-size: 16px; /* フォントサイズを小さくする */
     text-decoration: none;
     padding: 6px 12px; /* パディングを小さくする */
-    background-color: rgba(0, 0, 0, 0.6); /* 半透明の背景色 */
+    background-color: white(0, 0, 0, 0.6); /* 半透明の背景色 */
     border-radius: 5px;
     transition: background-color 0.3s, transform 0.3s;
 }
 .hero-link:hover {
     background-color: rgba(255, 255, 255, 0.8);
-    color: black;
+    color: blue;
     transform: scale(1.1);
 }
 /* --- もし既存の .tabs にスタイルがあるなら、そこに上書きする形で追加 --- */

@@ -343,7 +343,7 @@ function createFeaturedIssueCard(issue) {
         <div class="featured-issue-card ${categoryClass}">
             <span class="issue-category">${sanitizeHTML(issue.category_name)}</span>
             <a href="/issue.html?issue_id=${issue.id}">
-                <h3>${sanitizeHTML(issue.headline)}</h3>
+                <h3 class="multiline-ellipsis">${sanitizeHTML(issue.headline)}</h3>
             </a>
             <div class="comments-section">
                 <p>コメントを取得中...</p>
@@ -387,7 +387,7 @@ function createOtherIssueCard(issue) {
     return `
         <div class="other-issue-card ${categoryClass}">
             <span class="issue-category">${sanitizeHTML(issue.category_name)}</span>
-            <h4 class="issue-title">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
+            <h4 class="issue-title multiline-ellipsis">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
             <div class="vote-bar-container">
                 <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>
                 <div class="vote-bar-no" style="width: ${noPercent}%;"></div>
