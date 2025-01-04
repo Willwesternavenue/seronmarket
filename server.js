@@ -205,7 +205,7 @@ for (const sql of tableDefinitions) {
 const initialCategories = [
     '政治', '社会', '経済', '外交', '国際', '税金',
     'ビジネス', '少子高齢化', '医療福祉', '教育', '環境',
-    'テクノロジー', '文化', '地理'
+    'テクノロジー', '文化', '地域'
 ];
 
 initialCategories.forEach((name) => {
