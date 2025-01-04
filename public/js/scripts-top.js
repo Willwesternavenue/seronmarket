@@ -3,26 +3,16 @@
 const PORT = 3000;
 
 document.addEventListener('DOMContentLoaded', () => {
-    //
     // 1) 初期表示：フィーチャーイシュー & その他のイシューを表示
-    //
     displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
     displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard);
-
-    //
     // 2) アクションボタンのクリック & キーボード操作に対応
-    //
     document.addEventListener('click', handleActionButtonClickEvent);
     document.addEventListener('keypress', handleActionButtonKeyPress);
-
-    //
     // 3) カテゴリタブ生成＆タブ切り替え処理
-    //
     const tabsContainer = document.querySelector('.tabs');
     if (tabsContainer) {
         fetchCategories(); // カテゴリタブの生成
-
-        // タブをクリックしたらイシュー表示を切り替える
         tabsContainer.addEventListener('click', (e) => {
             if (!e.target.classList.contains('tab-button')) return;
             
@@ -109,7 +99,6 @@ function fetchCategories() {
         .catch(err => console.error('Error fetching categories:', err));
 }
 
-
 /**
  * イシューを取得して「issues-container」に表示
  * @param {number|null} categoryId - フィルタしたいカテゴリID (null の場合は全て)
@@ -134,7 +123,6 @@ function fetchIssues(categoryId = null) {
             issuesContainer.innerHTML = issues.map(issue => `
                 <div class="issue-card">
                     <h3>${sanitizeHTML(issue.headline)}</h3>
-                    <p>${sanitizeHTML(issue.description)}</p>
                     <p>カテゴリ: ${sanitizeHTML(issue.category_name) || '未分類'}</p>
                     <p>作成者: ${sanitizeHTML(issue.created_by) || '不明'}</p>
                     <p>いいね: ${sanitizeHTML(issue.likes)}</p>
@@ -148,6 +136,42 @@ function fetchIssues(categoryId = null) {
                 issuesContainer.innerHTML = '<p>イシューの取得に失敗しました。</p>';
             }
         });
+}
+
+function rotateComments(comments, containerSelector) {
+    const container = document.querySelector(containerSelector);
+    if (!container) {
+        console.error(`コメントのコンテナが見つかりません: ${containerSelector}`);
+        return;
+    }
+
+    const latestComments = comments.slice(0, 3);
+    let currentIndex = 0;
+
+    function displayComments(comments) {
+        const container = document.getElementById('comments-container');
+        if (!container) {
+            console.error('コメント表示用のコンテナが見つかりません。');
+            return;
+        }
+    
+        container.innerHTML = comments.map(c => `
+            <div class="comment">
+                <p>${sanitizeHTML(c.comment)}</p>
+            </div>
+        `).join('');
+    }
+    
+
+    if (latestComments.length > 0) {
+        displayComment(currentIndex);
+        setInterval(() => {
+            currentIndex = (currentIndex + 1) % latestComments.length;
+            displayComment(currentIndex);
+        }, 3000);
+    } else {
+        container.innerHTML = '<p>表示するコメントがありません。</p>';
+    }
 }
 
 /**
@@ -241,6 +265,33 @@ function updateButtonCount(button, newCount) {
         countSpan.textContent = `(${newCount})`;
     }
 }
+function fetchAndDisplayComments(issueId, cardElement) {
+    fetch(`/api/issues/${issueId}/comments`)
+        .then(handleFetchResponse)
+        .then(comments => {
+            const commentsSection = cardElement.querySelector('.comments-section');
+            if (!commentsSection) return;
+
+            if (comments.length > 0) {
+                const firstCommentsHTML = comments[0];
+                const singleCommentHTML = `
+                    <div class="comment">
+                        <p>${sanitizeHTML(firstCommentsHTML.comment)}</p>
+                    </div>
+                `;
+                commentsSection.innerHTML = singleCommentHTML;
+            } else {
+                commentsSection.innerHTML = '<p>このイシューにはまだコメントがありません。</p>';
+            }
+        })
+        .catch(err => {
+            console.error(`Error fetching comments for issue ${issueId}:`, err);
+            const commentsSection = cardElement.querySelector('.comments-section');
+            if (commentsSection) {
+                commentsSection.innerHTML = '<p>コメントの取得に失敗しました。</p>';
+            }
+        });
+}
 
 /**
  * APIからデータを取得して表示
@@ -257,23 +308,24 @@ function displayIssues(url, containerId, cardCreator) {
 
     fetch(url)
         .then(handleFetchResponse)
-        .then(data => {
-            if (!Array.isArray(data)) {
-                console.error(`APIから予期しないデータ形式が返されました: ${data}`);
-                container.innerHTML = '<p>データの取得に失敗しました。</p>';
-                return;
-            }
+        .then(issues => {
+            container.innerHTML = ''; // 初期化
+            issues.forEach(issue => {
+                const cardHTML = cardCreator(issue);
+                const cardElement = document.createElement('div');
+                cardElement.innerHTML = cardHTML;
+                container.appendChild(cardElement);
 
-            // イシューを表示
-            container.innerHTML = data.length
-                ? data.map(cardCreator).join('')
-                : '<p>現在データはありません。</p>';
+                // コメントを非同期で取得して表示
+                fetchAndDisplayComments(issue.id, cardElement);
+            });
         })
         .catch(err => {
             console.error(`Error fetching issues from ${url}:`, err);
             container.innerHTML = '<p>データの取得に失敗しました。</p>';
         });
 }
+
 
 /**
  * フィーチャーイシューカードを生成
@@ -286,14 +338,16 @@ function createFeaturedIssueCard(issue) {
     const favoritesCount = issue.favorites || 0;
     const categoryClass = issue.category_id ? `category-${issue.category_id}` : 'category-default';
 
+    // コメントセクションのプレースホルダーを追加
     return `
         <div class="featured-issue-card ${categoryClass}">
             <span class="issue-category">${sanitizeHTML(issue.category_name)}</span>
-            <span class="trending-icon"><i class="fas fa-fire"></i></span>
             <a href="/issue.html?issue_id=${issue.id}">
                 <h3>${sanitizeHTML(issue.headline)}</h3>
             </a>
-            <p>${sanitizeHTML(issue.description)}</p>
+            <div class="comments-section">
+                <p>コメントを取得中...</p>
+            </div>
             <div class="vote-bar-container">
                 <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>
                 <div class="vote-bar-no" style="width: ${noPercent}%;"></div>
@@ -319,7 +373,6 @@ function createFeaturedIssueCard(issue) {
         </div>
     `;
 }
-
 /**
  * その他のイシューカードを生成
  * @param {Object} issue - イシュー情報
@@ -343,6 +396,7 @@ function createOtherIssueCard(issue) {
                 <span>YES ${yesPercent}%</span>
                 <span>NO ${noPercent}%</span>
             </div>
+
             <div class="action-buttons">
                 <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
                     <i class="fas fa-hand-paper icon"></i> ${issue.stance_count || 0}

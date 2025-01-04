@@ -131,13 +131,16 @@ function submitStance() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ issue_id: issueId, stance, comment }),
-        credentials: 'same-origin' // セッション情報を含める
+        credentials: 'include' // セッション情報を含める
     })
-    .then(handleFetchResponse)
+    .then(response => response.json())
     .then(data => {
+        if (data.error) {
+            errorDiv.textContent = `スタンスの投稿に失敗しました: ${data.error}`;
+            return;
+        }
         successDiv.textContent = 'スタンスが投稿されました！';
         document.getElementById('post-stance-form').reset();
-        // 必要に応じてスタンス一覧を再取得・更新
         refreshIssues();
     })
     .catch(err => {

@@ -10,6 +10,7 @@ const bcrypt = require('bcrypt');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const helmet = require('helmet');
+const router = express.Router();
 
 // =========================
 // 1. データベース初期化
@@ -302,6 +303,27 @@ app.get('/api/categories', (req, res) => {
         res.json(rows);
     });
 });
+// コメントを取得
+app.get('/api/issues/:issue_id/comments', (req, res) => {
+    const issueId = req.params.issue_id;
+
+    const sql = `
+        SELECT COALESCE(stances.comment, '') AS comment
+        FROM stances
+        WHERE stances.issue_id = ?
+        AND stances.comment IS NOT NULL AND stances.comment != ''
+        ORDER BY stances.created_at DESC
+    `;
+
+    db.all(sql, [issueId], (err, rows) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Failed to fetch comments' });
+        }
+        res.json(rows);
+    });
+});
+
 
 // --- 認証系エンドポイント ---
 
@@ -381,10 +403,11 @@ app.get('/logout', (req, res) => {
 
 // --- イシュー関連エンドポイント ---
 
-// 例: /api/issues/:issue_id エンドポイント
+// API: /api/issues/:issue_id
 app.get('/api/issues/:issue_id', (req, res) => {
     const issueId = req.params.issue_id;
 
+    // イシュー情報を取得するクエリ
     const sqlIssue = `
         SELECT
             issues.id,
@@ -395,75 +418,76 @@ app.get('/api/issues/:issue_id', (req, res) => {
             issues.is_featured,
             categories.name AS category_name,
             users.username AS author_name,
-            issues.likes,
 
-            -- stance_count: stancesテーブルを集計
+            -- スタンス数をカウント
             (
-                SELECT COUNT(*) 
-                FROM stances 
+                SELECT COUNT(*)
+                FROM stances
                 WHERE stances.issue_id = issues.id
             ) as stance_count,
-            -- favorite_count: favoritesテーブルを集計
+
+            -- お気に入り数をカウント
             (
-                SELECT COUNT(*) 
+                SELECT COUNT(*)
                 FROM favorites
                 WHERE favorites.issue_id = issues.id
             ) as favorite_count,
-            -- comments_count: commentsテーブルを集計
+
+            -- コメント数をカウント
             (
                 SELECT COUNT(*)
                 FROM comments
                 WHERE comments.issue_id = issues.id
             ) as comments_count
         FROM issues
-        LEFT JOIN stances ON issues.id = stances.issue_id
         LEFT JOIN categories ON issues.category_id = categories.id
         LEFT JOIN users ON issues.created_by = users.id
         WHERE issues.id = ?
         GROUP BY issues.id, categories.name, users.username;
     `;
-    
-    // stancesテーブルからコメントやユーザー名を取得する例
-    // あるいは commentsテーブルを使用する場合もあり
+
+    // コメント情報を取得するクエリ
     const sqlComments = `
         SELECT
-            stances.stance,
-            stances.comment,
+            comments.comment,
             users.username,
-            stances.created_at
-        FROM stances
-        LEFT JOIN users ON stances.user_id = users.id
-        WHERE stances.issue_id = ?
-        ORDER BY stances.created_at DESC;
+            comments.created_at,
+            stances.stance
+        FROM comments
+        LEFT JOIN users ON comments.user_id = users.id
+        LEFT JOIN stances ON stances.issue_id = comments.issue_id AND comments.user_id = stances.user_id
+        WHERE comments.issue_id = ?
+        ORDER BY comments.created_at DESC
+        LIMIT 3;
     `;
-    
+
     // 1. イシュー情報を取得
     db.get(sqlIssue, [issueId], (err, issueRow) => {
         if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ error: 'Failed to fetch issue.' });
-        }
-        if (!issueRow) {
-            return res.status(404).json({ error: 'Issue not found' });
+            console.error('Database error while fetching issue:', err);
+            return res.status(500).json({ error: 'Failed to fetch issue details.' });
         }
 
-        // 2. stances(or comments)を取得
+        if (!issueRow) {
+            return res.status(404).json({ error: 'Issue not found.' });
+        }
+
+        // 2. コメント情報を取得
         db.all(sqlComments, [issueId], (err, commentRows) => {
             if (err) {
-                console.error('Database error:', err);
-                return res.status(500).json({ error: 'Failed to fetch comments' });
+                console.error('Database error while fetching comments:', err);
+                return res.status(500).json({ error: 'Failed to fetch comments.' });
             }
 
-            // 3. レスポンス構築
-            //    issueの中に likes, stance_count, favorite_count, comments_count 等を含める
-            //    commentsは別配列として返す
+            // 3. 結果をクライアントに送信
             res.json({
-                issue: issueRow,        // { id, headline, description, likes, ..., stance_count, ... }
-                comments: commentRows   // [{ stance, comment, created_at, username }, ...]
+                issue: issueRow,       // イシュー詳細情報
+                comments: commentRows  // 最新3件のコメント
             });
         });
     });
 });
+
 
 // イシュー作成
 app.post('/api/issues', (req, res) => {
@@ -497,44 +521,50 @@ app.post('/api/issues', (req, res) => {
 
 // イシュー更新 (管理者)
 app.put('/api/issues/:id', isAuthenticated, isAdmin, (req, res) => {
-    const issueId = req.params.id;
-    const { is_featured, headline, description, tag } = req.body;
+    const { issue_id, stance, comment } = req.body;
+    const user_id = req.session.user_id;
 
-    let fields = [];
-    let values = [];
+    // トランザクションで複数の操作を実行
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
 
-    if (typeof is_featured !== 'undefined') {
-        fields.push('is_featured = ?');
-        values.push(is_featured ? 1 : 0);
-    }
-    if (headline) {
-        fields.push('headline = ?');
-        values.push(headline);
-    }
-    if (description) {
-        fields.push('description = ?');
-        values.push(description);
-    }
-    if (tag) {
-        fields.push('tag = ?');
-        values.push(tag);
-    }
+        // 1. スタンスを stances テーブルに追加
+        const sqlStance = `
+            INSERT INTO stances (issue_id, stance, comment, user_id)
+            VALUES (?, ?, ?, ?);
+        `;
+        db.run(sqlStance, [issue_id, stance, comment, user_id], function (err) {
+            if (err) {
+                console.error('Error inserting stance:', err);
+                db.run('ROLLBACK');
+                return res.status(500).json({ error: 'Failed to submit stance' });
+            }
+        });
 
-    if (fields.length === 0) {
-        return res.status(400).json({ error: 'No fields to update' });
-    }
-    values.push(issueId);
-
-    const sql = `UPDATE issues SET ${fields.join(', ')} WHERE id = ?`;
-    db.run(sql, values, function (err) {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ error: 'Database error' });
+        // 2. コメントを comments テーブルに追加（空コメントの場合はスキップ）
+        if (comment) {
+            const sqlComment = `
+                INSERT INTO comments (issue_id, comment, user_id, created_at)
+                VALUES (?, ?, ?, datetime('now'));
+            `;
+            db.run(sqlComment, [issue_id, comment, user_id], function (err) {
+                if (err) {
+                    console.error('Error inserting comment:', err);
+                    db.run('ROLLBACK');
+                    return res.status(500).json({ error: 'Failed to submit comment' });
+                }
+            });
         }
-        if (this.changes === 0) {
-            return res.status(404).json({ error: 'Issue not found' });
-        }
-        res.sendStatus(200);
+
+        // トランザクションをコミット
+        db.run('COMMIT', (err) => {
+            if (err) {
+                console.error('Error committing transaction:', err);
+                db.run('ROLLBACK');
+                return res.status(500).json({ error: 'Failed to complete transaction' });
+            }
+            res.json({ success: true });
+        });
     });
 });
 
@@ -553,6 +583,7 @@ app.delete('/api/issues/:id', isAuthenticated, isAdmin, (req, res) => {
     });
 });
 
+// YES/NO/様子見スタンス
 // YES/NO/様子見スタンス
 app.post('/api/stances', isAuthenticated, (req, res) => {
     const { issue_id, stance, comment } = req.body;
@@ -579,9 +610,11 @@ app.post('/api/stances', isAuthenticated, (req, res) => {
     `;
     db.get(checkSql, { $issueId: issue_id, $userId: userId }, (err, existingStance) => {
         if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ error: 'Database error' });
+            console.error('Database error while checking stance:', err);
+            return res.status(500).json({ error: 'Database error while checking stance' });
         }
+
+        console.log('Existing stance:', existingStance);
 
         if (existingStance) {
             // 既存のスタンスを更新
@@ -603,14 +636,15 @@ app.post('/api/stances', isAuthenticated, (req, res) => {
                         console.error('Database update error:', err);
                         return res.status(500).json({ error: 'Database update error' });
                     }
+                    console.log('Stance updated successfully');
                     res.status(200).json({ message: 'Stance updated successfully' });
                 }
             );
         } else {
             // 新規スタンスを挿入
             const insertSql = `
-                INSERT INTO stances (issue_id, user_id, stance, comment)
-                VALUES ($issueId, $userId, $stance, $comment)
+                INSERT INTO stances (issue_id, user_id, stance, comment, created_at)
+                VALUES ($issueId, $userId, $stance, $comment, datetime('now'))
             `;
             db.run(
                 insertSql,
@@ -625,12 +659,14 @@ app.post('/api/stances', isAuthenticated, (req, res) => {
                         console.error('Database insert error:', err);
                         return res.status(500).json({ error: 'Database insert error' });
                     }
+                    console.log('Stance added successfully');
                     res.status(201).json({ message: 'Stance added successfully' });
                 }
             );
         }
     });
 });
+
 
 // いいね
 app.post('/api/issues/:id/like', (req, res) => {
@@ -918,6 +954,50 @@ app.get('/api/admin/issues', isAuthenticated, isAdmin, (req, res) => {
         res.json(mapped);
     });
 });
+
+// スタンスとコメントを投稿
+router.post('/api/stances', async (req, res) => {
+    const { issue_id, stance, comment } = req.body;
+    const user_id = req.session.user_id; // ログインユーザーのID
+
+    if (!issue_id || !stance || !user_id) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        // トランザクションの開始
+        const dbTransaction = await db.transaction();
+
+        // コメントが提供された場合、commentsテーブルに挿入
+        if (comment) {
+            await dbTransaction('comments').insert({
+                issue_id,
+                user_id,
+                comment,
+                created_at: new Date()
+            });
+        }
+
+        // スタンスカウントを更新 (YES, NO, 様子見)
+        if (['YES', 'NO', '様子見'].includes(stance)) {
+            const column = stance.toLowerCase() + '_count';
+            await dbTransaction('issues')
+                .increment(column, 1)
+                .where({ id: issue_id });
+        }
+
+        // コミット
+        await dbTransaction.commit();
+
+        res.json({ message: 'Stance and comment added successfully' });
+    } catch (err) {
+        console.error('Error posting stance:', err);
+        res.status(500).json({ error: 'Failed to post stance' });
+    }
+});
+
+module.exports = router;
+
 
 // =========================
 // カテゴリ管理 (管理者向け)
