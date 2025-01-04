@@ -479,47 +479,6 @@ max-height: calc(1.4em * 2);       /* 2行分の高さ (行数に合わせて計
 }
 
 /* -----------------------------------
-   Mypage Image Styles
------------------------------------ */
-.mypage-image {
-    width: 100px;
-    max-width: 300px;
-    height: auto;
-    border-radius: 50%;
-    object-fit: cover;
-    box-shadow: 0 2px 4px var(--color-shadow);
-    margin: 0 auto;
-    display: block;
-}
-
-.mypage-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    background-color: var(--color-white);
-    border-radius: var(--border-radius);
-    box-shadow: 0 2px 4px var(--color-shadow);
-    margin-top: 20px;
-}
-
-@media (min-width: 768px) {
-    .mypage-section {
-        flex-direction: row;
-        align-items: flex-start;
-    }
-
-    .mypage-section .image-container {
-        flex: 1;
-        margin-right: 20px;
-    }
-
-    .mypage-section .content-container {
-        flex: 2;
-    }
-}
-
-/* -----------------------------------
    Stance and Issue Creation Forms
 ----------------------------------- */
 .stance-post-form,

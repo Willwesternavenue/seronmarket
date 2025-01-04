@@ -316,35 +316,45 @@ function refreshIssues() {
 /**
  * カテゴリドロップダウンを初期化（バックエンドから取得）
  */
+/**
+ * カテゴリドロップダウンを初期化（バックエンドから取得）
+ */
 function initializeTagDropdown() {
-    const tagDropdown = document.getElementById('tag');
-    if (!tagDropdown) {
-        console.error("タグドロップダウンが見つかりませんでした。");
+    // すべてのカテゴリドロップダウンを取得
+    const tagDropdowns = document.querySelectorAll('select[name^="tag"]');
+
+    if (!tagDropdowns.length) {
+        console.error("カテゴリドロップダウンが見つかりませんでした。");
         return;
     }
-
-    // 既存のオプションをクリア
-    tagDropdown.innerHTML = '<option value="">選択してください</option>';
 
     fetch('/api/categories', { credentials: 'same-origin' })
         .then(handleFetchResponse)
         .then(categories => {
             if (!Array.isArray(categories) || categories.length === 0) {
                 console.warn('利用可能なカテゴリがありません。');
-                tagDropdown.innerHTML = '<option disabled>利用可能なカテゴリがありません</option>';
+                tagDropdowns.forEach(dropdown => {
+                    dropdown.innerHTML = '<option disabled>利用可能なカテゴリがありません</option>';
+                });
                 return;
             }
 
-            categories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category.name; // バックエンドから送信されるnameを使用
-                option.textContent = category.name;
-                tagDropdown.appendChild(option);
+            // すべてのドロップダウンにカテゴリを挿入
+            tagDropdowns.forEach(dropdown => {
+                dropdown.innerHTML = '<option value="">選択してください</option>'; // 初期値を設定
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.name; // バックエンドから送信されるnameを使用
+                    option.textContent = category.name;
+                    dropdown.appendChild(option);
+                });
             });
         })
         .catch(err => {
             console.error('Error fetching categories:', err);
-            tagDropdown.innerHTML = '<option disabled>カテゴリの取得に失敗しました</option>';
+            tagDropdowns.forEach(dropdown => {
+                dropdown.innerHTML = '<option disabled>カテゴリの取得に失敗しました</option>';
+            });
         });
 }
 

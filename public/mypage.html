@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>SERON - マイページ</title>
     <link rel="stylesheet" href="/css/styles.css"> <!-- 外部CSSファイルへのパスを修正 -->
+    <link rel="stylesheet" href="/css/styles-mypage.css"> <!-- 外部CSSファイルへのパスを修正 -->
 </head>
 <body>
     <nav class="navbar navbar-mypage">
@@ -16,68 +17,108 @@
     </nav>
 
     <div class="mypage-section">
-        <div class="image-container">
-            <img src="/css/images.png" alt="プロフィール画像" class="mypage-image">
-        </div>
-        <div class="content-container">
-            <h3>ようこそ、<span id="username">ユーザー名</span>さん</h3>
-            獲得ポイント数<input
-            type="text"
-            id="searchInput"
-            placeholder="ポイント数"
-            aria-label="イシュー検索フィールド"
-          />
-          保有コイン数<input
-            type="text"
-            id="searchInput"
-            placeholder="コイン数"
-            aria-label="イシュー検索フィールド"
-          />
-            <p><strong>表示名</strong></p>
-            <p><input
-                type="text"
-                id="searchInput"
-                placeholder="名前入力"
-                aria-label="イシュー検索フィールド"
-              /></p>
-            <p><strong>紹介文</strong></p>
-            <p><input
-            type="text"
-            id="searchInput"
-            placeholder="紹介文入力"
-            aria-label="イシュー検索フィールド"
-          /></p>
-          <p><strong>公開SNSアカウント</strong></p>
-          YouTube :<input
-            type="text"
-            id="searchInput"
-            placeholder="YouTubeアカウント名"
-            aria-label="イシュー検索フィールド"
-          /></br>
-          X (旧Twitter) :<input
-            type="text"
-            id="searchInput"
-            placeholder="X アカウント名"
-            aria-label="イシュー検索フィールド"
-          /></br>
-         ブログURL :<input
-            type="text"
-            id="searchInput"
-            placeholder="ブログURL"
-            aria-label="イシュー検索フィールド"
-          /></br>
-          <button type="submit">更新</button>
+        <div class="profile-container">
+            <div class="image-container">
+                <img src="/css/images.png" alt="プロフィール画像" class="mypage-image">
+                <h3>ようこそ、<span id="username">ユーザー名</span>さん</h3>
+            </div>
+    
+            <div class="profile-row">
+                <label for="pointsInput">獲得ポイント数: XXX pts / 保有ゴールド数: XXX G</label>
+            </div>
+            <div class="profile-row">
+                <label for="coinsInput">フォロー数: XXX 人 / フォロワー数: XXX 人</label>
+                </label>
+            </div>            
+            <div class="profile-row">
+                <label for="coinsInput">作成したイシューの数: XXX 件</label>
+            </div>
+            
+            <div class="profile-row-left">
+                <label for="displayNameInput">表示名：
+                <input
+                    type="text"
+                    id="displayNameInput"
+                    placeholder="名前入力(最大12文字)"
+                    aria-label="名前入力"
+                /></label>
+            </div>
+            <div class="profile-row-left">
+                <label for="introInput">紹介文：</br>
+                    <textarea
+                        id="introInput"
+                        placeholder="紹介文入力(最大40文字)"
+                        aria-label="紹介文入力"
+                    ></textarea>
+                </label>
+            </div>
+            <div class="profile-row-left">
+                <label for="displayNameInput">専門分野：</label>
+                <div class="form-group">
+                    <label for="tag1">カテゴリ1:</label>
+                    <select id="tag1" name="tag" class="form-control" required>
+                        <option value="">選択してください</option>
+                        <!-- カテゴリがJavaScriptで動的に挿入されます -->
+                    </select>
+                    <div class="form-group">
+                        <label for="tag2">カテゴリ2:</label>
+                        <select id="tag2" name="tag" class="form-control" required>
+                            <option value="">選択してください</option>
+                            <!-- カテゴリがJavaScriptで動的に挿入されます -->
+                        </select>
+    
+                </div>
+            <div class="profile-row-left">
+                <label for="displayNameInput">関心分野：</label>
+                <input
+                    type="text"
+                    id="displayNameInput"
+                    placeholder="最大３つ"
+                    aria-label="名前入力"
+                />
+            </div>
+            <div class="profile-row-left">
+                <label for="youtubeAccount">YouTube：youtube.com/@
+                <input
+                    type="text"
+                    id="youtubeAccount-left"
+                    placeholder="チャンネルID"
+                    aria-label="YouTubeアカウント名"
+                /></label>
+            </div>
+            <div class="profile-row-left">
+                <label for="xAccount">X (旧Twitter)：＠
+                <input
+                    type="text"
+                    id="xAccount"
+                    placeholder="X アカウント名"
+                    aria-label="X アカウント名"
+                /></label>
+            </div>
+            <div class="profile-row-left">
+                <label for="blogUrl">Note：note.com/
+                <input
+                    type="text"
+                    id="blogUrl"
+                    placeholder="ID#"
+                    aria-label="ブログURL"
+                /></label>
+            </div>
+            <div class="button-row">
+                <button type="submit">更新</button>
+            </div>
         </div>
     </div>
+    
     <div class="section">
         <h3>イシューの作成依頼</h3>
         <div class="create-issue-form">
-            <form id="create-issue-form" class="create-issue-form">
+            <form id="create-issue-form" class="form">
                 <div class="form-group">
                     <label for="headline">ヘッドライン:</label>
                     <input type="text" id="headline" name="headline" class="form-control" required placeholder="ヘッドラインを入力">
                 </div>
-                <div class="form-group">
+                <div class="form-group
                     <label for="tag">カテゴリ:</label>
                     <select id="tag" name="tag" class="form-control" required>
                         <option value="">選択してください</option>
@@ -90,6 +131,7 @@
             </form>
         </div>
     </div>
+
     <div class="section">
         <h3>スタンス投稿</h3>
         <div class="stance-post-form">
@@ -112,17 +154,15 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="comment">コメント (50文字以内):</label>
+                    <label for="comment">コメント (50文字以内):
                     <textarea id="comment" name="comment" class="form-control" rows="3" maxlength="50" placeholder="コメントを入力"></textarea>
-                </div>
+                </div></label>
                 <button type="submit" class="btn btn-primary btn-submit-stance">投稿</button>
                 <div class="error-message" id="stance-error"></div>
                 <div class="success-message" id="stance-success"></div>
             </form>
         </div>
     </div>
-
-
 
     <div class="section">
         <h3>自分が作成したイシュー</h3>
