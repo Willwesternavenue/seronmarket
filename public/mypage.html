@@ -21,10 +21,68 @@
         </div>
         <div class="content-container">
             <h3>ようこそ、<span id="username">ユーザー名</span>さん</h3>
-            <p>ここからスタンスの投稿やイシューの作成ができます</p>
+            獲得ポイント数<input
+            type="text"
+            id="searchInput"
+            placeholder="ポイント数"
+            aria-label="イシュー検索フィールド"
+          />
+          保有コイン数<input
+            type="text"
+            id="searchInput"
+            placeholder="コイン数"
+            aria-label="イシュー検索フィールド"
+          />
+            <p><strong>プロフィールの編集</strong></p>
+            <p><input
+            type="text"
+            id="searchInput"
+            placeholder="プロフィール入力"
+            aria-label="イシュー検索フィールド"
+          /></p></br>
+          <p><strong>公開SNSアカウント</strong></p>
+          YouTube:<input
+            type="text"
+            id="searchInput"
+            placeholder="YouTubeアカウント名"
+            aria-label="イシュー検索フィールド"
+          /></br>
+          X（旧Twitter）:<input
+            type="text"
+            id="searchInput"
+            placeholder="X アカウント名"
+            aria-label="イシュー検索フィールド"
+          /></br>
+         ブログURL:<input
+            type="text"
+            id="searchInput"
+            placeholder="ブログURL"
+            aria-label="イシュー検索フィールド"
+          /></br>
+          <button type="submit">更新</button>
         </div>
     </div>
-
+    <div class="section">
+        <h3>イシューの作成依頼</h3>
+        <div class="create-issue-form">
+            <form id="create-issue-form" class="create-issue-form">
+                <div class="form-group">
+                    <label for="headline">ヘッドライン:</label>
+                    <input type="text" id="headline" name="headline" class="form-control" required placeholder="ヘッドラインを入力">
+                </div>
+                <div class="form-group">
+                    <label for="tag">カテゴリ:</label>
+                    <select id="tag" name="tag" class="form-control" required>
+                        <option value="">選択してください</option>
+                        <!-- カテゴリがJavaScriptで動的に挿入されます -->
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-create-issue">作成依頼提出</button>
+                <div class="error-message" id="issue-error"></div>
+                <div class="success-message" id="issue-success"></div>
+            </form>
+        </div>
+    </div>
     <div class="section">
         <h3>スタンス投稿</h3>
         <div class="stance-post-form">
@@ -57,31 +115,7 @@
         </div>
     </div>
 
-    <div class="section">
-        <h3>イシューの作成</h3>
-        <div class="create-issue-form">
-            <form id="create-issue-form" class="create-issue-form">
-                <div class="form-group">
-                    <label for="headline">ヘッドライン:</label>
-                    <input type="text" id="headline" name="headline" class="form-control" required placeholder="ヘッドラインを入力">
-                </div>
-                <div class="form-group">
-                    <label for="description">概要:</label>
-                    <textarea id="description" name="description" class="form-control" rows="4" required placeholder="概要を入力"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="tag">カテゴリ:</label>
-                    <select id="tag" name="tag" class="form-control" required>
-                        <option value="">選択してください</option>
-                        <!-- カテゴリがJavaScriptで動的に挿入されます -->
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary btn-create-issue">作成</button>
-                <div class="error-message" id="issue-error"></div>
-                <div class="success-message" id="issue-success"></div>
-            </form>
-        </div>
-    </div>
+
 
     <div class="section">
         <h3>自分が作成したイシュー</h3>
@@ -89,7 +123,7 @@
     </div>
 
     <div class="section">
-        <h3>他のイシュー</h3>
+        <h3>フォロー中のイシュー</h3>
         <div id="existingIssues"></div>
     </div>
 
