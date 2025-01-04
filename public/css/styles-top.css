@@ -78,3 +78,34 @@
     50% { opacity: 0; }
     100% { opacity: 0; }
 }
+.search-container {
+    margin: 20px 0;
+    text-align: center;
+  }
+  #searchForm {
+    display: inline-flex;
+  }
+  #searchInput {
+    padding: 8px;
+    border-radius: 4px 0 0 4px;
+    border: 1px solid #ccc;
+    width: 200px;
+  }
+  #searchForm button {
+    padding: 8px 16px;
+    border-radius: 0 4px 4px 0;
+    border: 1px solid #ccc;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+  }
+  #searchForm button:hover {
+    background-color: #0056b3;
+  }
+  #searchResults .issue-card {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #eee;
+    /* などなど */
+  }
+  

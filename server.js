@@ -291,6 +291,43 @@ app.get('/api/issues', (req, res) => {
     });
 });
 
+/**
+ * キーワード検索で該当するイシューを取得
+ * @param {string} q - 検索キーワード
+ * @returns {Promise<Array>} - 検索結果の配列
+ */
+function getIssuesBySearch(q) {
+    return new Promise((resolve, reject) => {
+        // 例: headline や description から部分一致検索する
+        const sql = `
+            SELECT 
+                issues.id,
+                issues.headline,
+                issues.description,
+                issues.category_id,
+                categories.name AS category_name,
+                users.username AS created_by,
+                issues.likes,
+                issues.is_featured
+            FROM issues
+            LEFT JOIN categories ON issues.category_id = categories.id
+            LEFT JOIN users ON issues.created_by = users.id
+            WHERE issues.headline LIKE ?
+               OR issues.description LIKE ?
+            ORDER BY issues.id DESC
+        `;
+        const likeQuery = `%${q}%`;
+
+        db.all(sql, [likeQuery, likeQuery], (err, rows) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(rows);
+        });
+    });
+}
+
+
 // カテゴリ一覧を取得
 app.get('/api/categories', (req, res) => {
     const sql = 'SELECT id, name FROM categories';
@@ -401,93 +438,6 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// --- イシュー関連エンドポイント ---
-
-// API: /api/issues/:issue_id
-app.get('/api/issues/:issue_id', (req, res) => {
-    const issueId = req.params.issue_id;
-
-    // イシュー情報を取得するクエリ
-    const sqlIssue = `
-        SELECT
-            issues.id,
-            issues.headline,
-            issues.description,
-            issues.category_id,
-            issues.likes,
-            issues.is_featured,
-            categories.name AS category_name,
-            users.username AS author_name,
-
-            -- スタンス数をカウント
-            (
-                SELECT COUNT(*)
-                FROM stances
-                WHERE stances.issue_id = issues.id
-            ) as stance_count,
-
-            -- お気に入り数をカウント
-            (
-                SELECT COUNT(*)
-                FROM favorites
-                WHERE favorites.issue_id = issues.id
-            ) as favorite_count,
-
-            -- コメント数をカウント
-            (
-                SELECT COUNT(*)
-                FROM comments
-                WHERE comments.issue_id = issues.id
-            ) as comments_count
-        FROM issues
-        LEFT JOIN categories ON issues.category_id = categories.id
-        LEFT JOIN users ON issues.created_by = users.id
-        WHERE issues.id = ?
-        GROUP BY issues.id, categories.name, users.username;
-    `;
-
-    // コメント情報を取得するクエリ
-    const sqlComments = `
-        SELECT
-            comments.comment,
-            users.username,
-            comments.created_at,
-            stances.stance
-        FROM comments
-        LEFT JOIN users ON comments.user_id = users.id
-        LEFT JOIN stances ON stances.issue_id = comments.issue_id AND comments.user_id = stances.user_id
-        WHERE comments.issue_id = ?
-        ORDER BY comments.created_at DESC
-        LIMIT 3;
-    `;
-
-    // 1. イシュー情報を取得
-    db.get(sqlIssue, [issueId], (err, issueRow) => {
-        if (err) {
-            console.error('Database error while fetching issue:', err);
-            return res.status(500).json({ error: 'Failed to fetch issue details.' });
-        }
-
-        if (!issueRow) {
-            return res.status(404).json({ error: 'Issue not found.' });
-        }
-
-        // 2. コメント情報を取得
-        db.all(sqlComments, [issueId], (err, commentRows) => {
-            if (err) {
-                console.error('Database error while fetching comments:', err);
-                return res.status(500).json({ error: 'Failed to fetch comments.' });
-            }
-
-            // 3. 結果をクライアントに送信
-            res.json({
-                issue: issueRow,       // イシュー詳細情報
-                comments: commentRows  // 最新3件のコメント
-            });
-        });
-    });
-});
-
 
 // イシュー作成
 app.post('/api/issues', (req, res) => {
@@ -582,6 +532,111 @@ app.delete('/api/issues/:id', isAuthenticated, isAdmin, (req, res) => {
         res.json({ message: 'Issue deleted successfully' });
     });
 });
+
+// Search
+app.get('/api/issues/search', async (req, res) => {
+    try {
+      const q = req.query.q || '';
+      // ここでDBなどからタイトルや本文などが q に部分一致するイシューを取得
+      // 例: SELECT * FROM issues WHERE headline LIKE '%q%'
+      const matchingIssues = await getIssuesBySearch(q);
+      res.json(matchingIssues);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: '検索に失敗しました' });
+    }
+  });
+  
+// --- イシュー関連エンドポイント ---
+
+// API: /api/issues/:issue_id
+app.get('/api/issues/:issue_id', (req, res) => {
+    const issueId = req.params.issue_id;
+
+    // イシュー情報を取得するクエリ
+    const sqlIssue = `
+        SELECT
+            issues.id,
+            issues.headline,
+            issues.description,
+            issues.category_id,
+            issues.likes,
+            issues.is_featured,
+            categories.name AS category_name,
+            users.username AS author_name,
+
+            -- スタンス数をカウント
+            (
+                SELECT COUNT(*)
+                FROM stances
+                WHERE stances.issue_id = issues.id
+            ) as stance_count,
+
+            -- お気に入り数をカウント
+            (
+                SELECT COUNT(*)
+                FROM favorites
+                WHERE favorites.issue_id = issues.id
+            ) as favorite_count,
+
+            -- コメント数をカウント
+            (
+                SELECT COUNT(*)
+                FROM comments
+                WHERE comments.issue_id = issues.id
+            ) as comments_count
+        FROM issues
+        LEFT JOIN categories ON issues.category_id = categories.id
+        LEFT JOIN users ON issues.created_by = users.id
+        WHERE issues.id = ?
+        GROUP BY issues.id, categories.name, users.username;
+    `;
+
+    // コメント情報を取得するクエリ
+    const sqlComments = `
+        SELECT
+            comments.comment,
+            users.username,
+            comments.created_at,
+            stances.stance
+        FROM comments
+        LEFT JOIN users ON comments.user_id = users.id
+        LEFT JOIN stances ON stances.issue_id = comments.issue_id AND comments.user_id = stances.user_id
+        WHERE comments.issue_id = ?
+        ORDER BY comments.created_at DESC
+        LIMIT 3;
+    `;
+
+    // 1. イシュー情報を取得
+    db.get(sqlIssue, [issueId], (err, issueRow) => {
+        if (err) {
+            console.error('Database error while fetching issue:', err);
+            return res.status(500).json({ error: 'Failed to fetch issue details.' });
+        }
+
+        if (!issueRow) {
+            return res.status(404).json({ error: 'Issue not found.' });
+        }
+
+        // 2. コメント情報を取得
+        db.all(sqlComments, [issueId], (err, commentRows) => {
+            if (err) {
+                console.error('Database error while fetching comments:', err);
+                return res.status(500).json({ error: 'Failed to fetch comments.' });
+            }
+
+            // 3. 結果をクライアントに送信
+            res.json({
+                issue: issueRow,       // イシュー詳細情報
+                comments: commentRows  // 最新3件のコメント
+            });
+        });
+    });
+});
+
+
+
+
 
 // YES/NO/様子見スタンス
 // YES/NO/様子見スタンス

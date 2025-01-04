@@ -35,8 +35,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    const searchForm = document.getElementById('searchForm');
+    const searchInput = document.getElementById('searchInput');
+    if (searchForm && searchInput) {
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // ページリロードを防ぐ
+            const query = searchInput.value.trim();
+            searchIssues(query);
+        });
+    }
 });
-
+    
 /**
  * アクションボタンのクリック処理
  */
@@ -172,6 +181,67 @@ function rotateComments(comments, containerSelector) {
     } else {
         container.innerHTML = '<p>表示するコメントがありません。</p>';
     }
+}
+
+function searchIssues(query) {
+    if (!query) {
+        // すべて再取得
+        displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
+        displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard);
+        return;
+    }
+    fetch(`/api/issues/search?q=${encodeURIComponent(query)}`)
+        .then(handleFetchResponse)
+        .then(issues => {
+            // 取得したissuesを "フィーチャー" と "その他" に振り分け
+            const featuredIssues = issues.filter(i => i.is_featured === 1);
+            const otherIssues = issues.filter(i => i.is_featured === 0);
+
+            // フィーチャー表示先
+            const featuredContainer = document.getElementById('featured-issues');
+            if (!featuredContainer) return;
+
+            // その他イシュー表示先
+            const existingContainer = document.getElementById('existingIssues');
+            if (!existingContainer) return;
+
+            // いったんクリア
+            featuredContainer.innerHTML = '';
+            existingContainer.innerHTML = '';
+
+            // フィーチャー表示
+            if (featuredIssues.length === 0) {
+                featuredContainer.innerHTML = `<p>「${query}」に一致するフィーチャーイシューはありません。</p>`;
+            } else {
+                featuredIssues.forEach(issue => {
+                    const cardHTML = createFeaturedIssueCard(issue);
+                    const cardElement = document.createElement('div');
+                    cardElement.innerHTML = cardHTML;
+                    featuredContainer.appendChild(cardElement);
+
+                    // コメント取得
+                    fetchAndDisplayComments(issue.id, cardElement);
+                });
+            }
+
+            // その他イシュー表示
+            if (otherIssues.length === 0) {
+                existingContainer.innerHTML = `<p>「${query}」に一致するイシューはありません。</p>`;
+            } else {
+                otherIssues.forEach(issue => {
+                    const cardHTML = createOtherIssueCard(issue);
+                    const cardElement = document.createElement('div');
+                    cardElement.innerHTML = cardHTML;
+                    existingContainer.appendChild(cardElement);
+
+                    // コメント取得
+                    fetchAndDisplayComments(issue.id, cardElement);
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Error searching issues:', err);
+        });
 }
 
 /**
@@ -374,7 +444,20 @@ function createFeaturedIssueCard(issue) {
     `;
 }
 /**
- * その他のイシューカードを生成
+ * その他のイシューカードを生成// Expressの例:
+app.get('/api/issues/search', async (req, res) => {
+  try {
+    const q = req.query.q || '';
+    // ここでDBなどからタイトルや本文などが q に部分一致するイシューを取得
+    // 例: SELECT * FROM issues WHERE headline LIKE '%q%'
+    const matchingIssues = await getIssuesBySearch(q);
+    res.json(matchingIssues);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '検索に失敗しました' });
+  }
+});
+
  * @param {Object} issue - イシュー情報
  * @returns {string} - HTML文字列
  */
