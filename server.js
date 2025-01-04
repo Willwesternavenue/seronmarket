@@ -126,8 +126,6 @@ function isAdmin(req, res, next) {
     }
     return res.status(403).json({ error: 'Forbidden: Admins only' });
 }
-
-
 // =========================
 // 5. テーブル作成
 // =========================
@@ -401,31 +399,49 @@ app.post('/register', (req, res) => {
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
+
     db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
         if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ error: 'Database error' });
+            console.error('An error occurred during login.');
+            return res.status(500).json({ error: 'An internal error occurred.' });
         }
+
         if (!user) {
-            return res.status(400).json({ error: 'User not found' });
+            return res.status(400).json({ error: 'Invalid username or password' });
         }
 
         bcrypt.compare(password, user.password, (err, result) => {
             if (err) {
-                console.error('Bcrypt error:', err);
+                console.error('An error occurred during password comparison.');
                 return res.status(500).json({ error: 'Authentication error' });
             }
-            if (result) {
+
+            if (!result) {
+                return res.status(400).json({ error: 'Invalid username or password' });
+            }
+
+            req.session.regenerate((err) => {
+                if (err) {
+                    console.error('Session regeneration error:', err);
+                    return res.status(500).json({ error: 'Session error' });
+                }
+
                 req.session.userId = user.id;
                 req.session.username = user.username;
                 req.session.isAdmin = user.is_admin === 1;
-                res.redirect('/mypage'); // ログイン後リダイレクト
-            } else {
-                res.status(400).json({ error: 'Incorrect password' });
-            }
+
+                // 管理者リダイレクト
+                if (user.is_admin === 1) {
+                    return res.redirect('/admin');
+                }
+
+                // 通常ユーザーリダイレクト
+                return res.redirect('/mypage');
+            });
         });
     });
 });
+
 
 // ログアウト
 app.get('/logout', (req, res) => {
