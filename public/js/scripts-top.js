@@ -470,8 +470,11 @@ function createOtherIssueCard(issue) {
     return `
         <div class="other-issue-card ${categoryClass}">
             <span class="issue-category">${sanitizeHTML(issue.category_name)}</span>
-            <h4 class="issue-title multiline-ellipsis">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
-            <div class="vote-bar-container">
+            <a href="/issue.html?issue_id=${issue.id}">
+                <h4 class="issue-title multiline-ellipsis">
+                ${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
+            </a>
+                <div class="vote-bar-container">
                 <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>
                 <div class="vote-bar-no" style="width: ${noPercent}%;"></div>
             </div>

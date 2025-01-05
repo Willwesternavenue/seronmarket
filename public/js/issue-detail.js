@@ -95,7 +95,7 @@
                 </div>
                 <div class="comment-header">
                     <div class="info">
-                        ${c.username || '名無しさん'} - ${new Date(c.created_at).toLocaleString()}
+                        by ${c.username || '名無しさん'} - ${new Date(c.created_at).toLocaleString()}
                     </div>
                     <div class="likes">
                         <i class="fas fa-thumbs-up"></i> 0
