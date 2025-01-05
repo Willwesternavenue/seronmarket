@@ -343,13 +343,17 @@ app.get('/api/issues/:issue_id/comments', (req, res) => {
     const issueId = req.params.issue_id;
 
     const sql = `
-        SELECT COALESCE(stances.comment, '') AS comment
+        SELECT
+            stances.stance,
+            stances.comment,
+            stances.created_at,
+            users.username
         FROM stances
+        LEFT JOIN users ON stances.user_id = users.id
         WHERE stances.issue_id = ?
-        AND stances.comment IS NOT NULL AND stances.comment != ''
         ORDER BY stances.created_at DESC
     `;
-
+ 
     db.all(sql, [issueId], (err, rows) => {
         if (err) {
             console.error('Database error:', err);
@@ -358,7 +362,6 @@ app.get('/api/issues/:issue_id/comments', (req, res) => {
         res.json(rows);
     });
 });
-
 
 // --- 認証系エンドポイント ---
 
@@ -611,15 +614,14 @@ app.get('/api/issues/:issue_id', (req, res) => {
     // コメント情報を取得するクエリ
     const sqlComments = `
         SELECT
-            comments.comment,
-            users.username,
-            comments.created_at,
-            stances.stance
-        FROM comments
-        LEFT JOIN users ON comments.user_id = users.id
-        LEFT JOIN stances ON stances.issue_id = comments.issue_id AND comments.user_id = stances.user_id
-        WHERE comments.issue_id = ?
-        ORDER BY comments.created_at DESC
+            stances.stance,
+            stances.comment,
+            stances.created_at,
+            users.username
+        FROM stances
+        LEFT JOIN users ON stances.user_id = users.id
+        WHERE stances.issue_id = ?
+        ORDER BY stances.created_at DESC
         LIMIT 3;
     `;
 

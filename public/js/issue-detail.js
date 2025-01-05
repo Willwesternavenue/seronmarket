@@ -76,18 +76,23 @@
     function displayComments(comments) {
         const yesContainer = document.getElementById('yes-comments');
         const noContainer = document.getElementById('no-comments');
-
+    
         yesContainer.innerHTML = '';
         noContainer.innerHTML = '';
-
+    
         comments.forEach(c => {
+            // 1) コメントが null, undefined, または空文字の場合はスキップ
+            if (!c.comment || c.comment.trim() === '') {
+                return; // コメントが存在しないなら表示しない
+            }
+    
+            // 2) コメント要素を生成
             const div = document.createElement('div');
             div.className = 'comment';
             div.innerHTML = `
                 <div class="comment-details">
-                <strong>${c.comment || ''}</strong>
-            </div>
-
+                    <strong>${c.comment || ''}</strong>
+                </div>
                 <div class="comment-header">
                     <div class="info">
                         ${c.username || '名無しさん'} - ${new Date(c.created_at).toLocaleString()}
@@ -97,7 +102,8 @@
                     </div>
                 </div>
             `;
-
+    
+            // 3) YES / NO 振り分け
             if (c.stance === 'YES') {
                 yesContainer.appendChild(div);
             } else if (c.stance === 'NO') {
@@ -105,4 +111,4 @@
             }
         });
     }
-})();
+    })();
