@@ -215,7 +215,7 @@ max-height: calc(1.4em * 2);       /* 2行分の高さ (行数に合わせて計
     background-color: #fff; /* Light background */
     position: relative;
     box-sizing: border-box;
-    min-height: 300px; /* 必要なら設定 */
+    min-height: 320px; /* 必要なら設定 */
     padding: 10px; /* パディングを縮小 */
 }
 

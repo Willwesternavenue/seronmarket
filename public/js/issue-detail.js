@@ -75,15 +75,15 @@ function sanitizeHTML(str) {
     function displayStats(issue) {
         const likeSpan = document.querySelector('.like-stat span');
         if (likeSpan) {
-            likeSpan.textContent = `いいね: ${issue.likes ?? 0}`;
+            likeSpan.textContent = `ホット: ${issue.likes ?? 0}`;
         }
         const stanceSpan = document.querySelector('.stance-stat span');
         if (stanceSpan) {
-            stanceSpan.textContent = `スタンス投稿数: ${issue.stance_count ?? 0}`;
+            stanceSpan.textContent = `スタンス: ${issue.stance_count ?? 0}`;
         }
         const favSpan = document.querySelector('.favorite-stat span');
         if (favSpan) {
-            favSpan.textContent = `お気に入り: ${issue.favorite_count ?? 0}`;
+            favSpan.textContent = `フォロー: ${issue.favorite_count ?? 0}`;
         }
         const commentSpan = document.querySelector('.comment-stat span');
         if (commentSpan) {

@@ -190,7 +190,7 @@
 
 /* Optional: Featured styling (if needed) */
 .featured {
-    background-color: #ff5722;
+    background-color: goldenrod; /* お好みの色 */
     color: #fff;
     padding: 6px 12px;
     border-radius: 25px;

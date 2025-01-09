@@ -116,7 +116,6 @@ function fetchIssues(categoryId = null) {
     const endpoint = categoryId 
         ? `/api/issues?category_id=${categoryId}` 
         : '/api/issues';
-
     fetch(endpoint)
         .then(handleFetchResponse)
         .then(issues => {
@@ -171,7 +170,6 @@ function rotateComments(comments, containerSelector) {
         `).join('');
     }
     
-
     if (latestComments.length > 0) {
         displayComment(currentIndex);
         setInterval(() => {
@@ -347,7 +345,7 @@ function fetchAndDisplayComments(issueId, cardElement) {
                 const singleCommentHTML = `
                     <div class="comment">
                         <p>${sanitizeHTML(latestComment.comment)}</p>
-                        <small>- ${sanitizeHTML(latestComment.username || '名無しさん')}, ${new Date(latestComment.created_at).toLocaleString()}</small>
+                        <small>- ${sanitizeHTML(latestComment.username || '名無しさん')} - ${new Date(latestComment.created_at).toLocaleString()}</small>
                     </div>
                 `;
                 commentsSection.innerHTML = singleCommentHTML;
