@@ -343,15 +343,16 @@ function fetchAndDisplayComments(issueId, cardElement) {
             if (!commentsSection) return;
 
             if (comments.length > 0) {
-                const firstCommentsHTML = comments[0];
+                const latestComment = comments[0]; // 最新のコメント1件を取得
                 const singleCommentHTML = `
                     <div class="comment">
-                        <p>${sanitizeHTML(firstCommentsHTML.comment)}</p>
+                        <p>${sanitizeHTML(latestComment.comment)}</p>
+                        <small>- ${sanitizeHTML(latestComment.username || '名無しさん')}, ${new Date(latestComment.created_at).toLocaleString()}</small>
                     </div>
                 `;
                 commentsSection.innerHTML = singleCommentHTML;
             } else {
-                commentsSection.innerHTML = '<p>このイシューにはまだコメントがありません。</p>';
+                commentsSection.innerHTML = '<p>（まだコメントがありません）</p>';
             }
         })
         .catch(err => {

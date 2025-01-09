@@ -1,20 +1,25 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>イシュー詳細</title>
     <link rel="stylesheet" href="/css/styles-issue.css" />
     <link rel="stylesheet" href="/css/styles.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chart.js Data Labels Plugin CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
+    <!-- ★ 外部JSファイルを defer で読み込み、HTML がパースされた後に実行する -->
+    <script src="/js/issue-detail.js" defer></script>
 </head>
 <body>
     <div class="top-link"></div> <!-- ここにTOPページリンクが挿入されます -->
+
     <div class="container">
         <div class="header">
             <!-- カテゴリ + フィーチャー表示部分 -->
@@ -27,7 +32,7 @@
             <div class="author">作成者：<span class="author-name"></span></div>
         </div>
 
-        <!-- スタッツやシェアボタン等 -->
+        <!-- スタッツ -->
         <div class="top-stats-share">
             <div class="stats">
                 <div class="stat-item like-stat">
@@ -49,7 +54,7 @@
             </div>
         </div>
 
-        <!-- 円グラフなど -->
+        <!-- 円グラフ (ユーザーチャート & AIチャート) -->
         <div class="charts">
             <div class="chart-container">
                 <canvas id="userChart"></canvas>
@@ -60,22 +65,25 @@
                 <div class="legend">AI評価</div>
             </div>
         </div>
+
+        <!-- AIコメント欄 (固定) -->
         <div class="ai-comments">
             <h3><i class="fas fa-robot"></i>AI評価コメント</h3>
             <div class="ai-comment">
-                <p>夫婦別姓制度の導入は、個々のアイデンティティを尊重し、多様な家族形態を受け入れる社会の一歩となります。個人の選択の自由を広げ、性別に依存しない社会の構築に寄与すると考えられます。その一方、伝統的な家族観を揺るがす可能性があり、社会的な混乱を招く恐れがあります。また、姓の統一が家族の一体感を醸成する役割を果たしている点を考慮する必要があります。</p>
+                <p>（AIコメントの例）</p>
                 <span class="likes"><i class="fas fa-thumbs-up"></i> 25</span>
             </div>
+        </div>
 
-        <!-- コメントエリア -->
+        <!-- コメント欄 -->
         <div class="comments">
-            <!-- 左側：YESコメント -->
+            <!-- YESコメント -->
             <div class="comments-side">
                 <h2><i class="fas fa-thumbs-up icon"></i> YES コメント</h2>
                 <div id="yes-comments"></div>
             </div>
 
-            <!-- 右側：NOコメント -->
+            <!-- NOコメント -->
             <div class="comments-side">
                 <h2><i class="fas fa-thumbs-down icon"></i> NO コメント</h2>
                 <div id="no-comments"></div>
@@ -83,191 +91,8 @@
         </div>
     </div>
 
-    <script>
-        // URLから issue_id を取得
-        const urlParams = new URLSearchParams(window.location.search);
-        const issueId = urlParams.get('issue_id');
-    
-        if (!issueId) {
-            alert("イシューIDが見つかりませんでした。");
-            throw new Error("Missing issue_id in URL");
-        }
-    
-        // /api/issues/:issue_id からデータを取得 (例: { issue: {...}, comments: [...] })
-        fetch(`/api/issues/${issueId}`)
-            .then(response => {
-                if (!response.ok) throw new Error("Failed to fetch issue details");
-                return response.json();
-            })
-            .then(data => {
-                // data.issue, data.comments を想定
-                displayIssueDetails(data.issue);
-                displayStats(data.issue);  // ←ここを追加し、いいね/スタンス数などを表示
-                displayComments(data.comments, 'yes-comments', 'YES');
-                displayComments(data.comments, 'no-comments', 'NO');
-            })
-            .catch(error => {
-                console.error(error);
-                document.body.innerHTML = '<p>データの取得に失敗しました。</p>';
-            });
-    // ユーザーデータ (例: YES, NO, 様子見の割合)
-const userData = {
-    labels: ['YES', 'NO', '様子見'],
-    datasets: [{
-        data: [55, 35, 10], // 割合をパーセンテージで設定
-        backgroundColor: ['#42A5F5', '#EF5350', '#B0BEC5'], // 各セクションの色
-        hoverBackgroundColor: ['#64B5F6', '#E57373', '#CFD8DC']
-    }]
-};
-
-// AIデータ (例: YESとNOの割合)
-const aiData = {
-    labels: ['YES', 'NO'],
-    datasets: [{
-        data: [60, 40],
-        backgroundColor: ['#1E88E5', '#C62828'], // YESとNOの色
-        hoverBackgroundColor: ['#1565C0', '#B71C1C']
-    }]
-};
-
-// Chart.jsを使って円グラフを描画する関数
-function createChart(ctx, data) {
-    return new Chart(ctx, {
-        type: 'doughnut', // 円グラフの種類
-        data: data,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom', // 凡例の位置
-                },
-                tooltip: {
-                    enabled: true
-                },
-                datalabels: {
-                    color: '#ffffff',
-                    formatter: (value, context) => {
-                        const sum = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                        const percentage = ((value / sum) * 100).toFixed(1) + '%';
-                        return percentage;
-                    },
-                    font: {
-                        weight: 'bold',
-                        size: 14
-                    }
-                }
-            }
-        },
-        plugins: [ChartDataLabels]
-    });
-}
-
-// ユーザーチャート
-const userCtx = document.getElementById('userChart').getContext('2d');
-createChart(userCtx, userData);
-
-// AIチャート
-const aiCtx = document.getElementById('aiChart').getContext('2d');
-createChart(aiCtx, aiData);
-
-        /**
-         * イシューの詳細を表示する処理
-         * @param {Object} issue - APIから取得したイシュー詳細
-         */
-        function displayIssueDetails(issue) {
-            // カテゴリを表示
-            // もしサーバー側が categories.name AS tag として返すなら issue.tag がカテゴリ名
-            // あるいは issue.category_name など、返却データにあわせて変える
-            document.querySelector('.category').textContent = issue.category_name || '未分類';
-    
-            // Featured のときだけ「Featured」を表示
-            const featuredSpan = document.querySelector('.featured');
-            if (issue.is_featured === 1) {
-                featuredSpan.style.display = 'inline-block';
-            } else {
-                featuredSpan.style.display = 'none';
-            }
-    
-            // イシュータイトル
-            document.querySelector('.issue-title').textContent = issue.headline;
-            // 作成者
-            // サーバーが "issue.author_name" で作成者名を返している想定
-            document.querySelector('.author-name').textContent = issue.author_name || '不明ユーザー';
-    
-            // 作成者を表示 (もし issue.created_by や author_name 等があるなら)
-            // 例: document.querySelector('.author-name').textContent = issue.author_name || '';
-        }
-    // ■ この関数が いいね・スタンス投稿数・お気に入り・コメント数 を更新する
-        function displayStats(issue) {
-                // いいね数
-                const likeSpan = document.querySelector('.like-stat span');
-                if (likeSpan) {
-                    likeSpan.textContent = `いいね: ${issue.likes ?? 0}`;
-                }
-
-                // スタンス投稿数
-                const stanceSpan = document.querySelector('.stance-stat span');
-                if (stanceSpan) {
-                    stanceSpan.textContent = `スタンス投稿数: ${issue.stance_count ?? 0}`;
-                }
-
-                // お気に入り数
-                const favoriteSpan = document.querySelector('.favorite-stat span');
-                if (favoriteSpan) {
-                    // issue.favorite_count という名前でサーバーが返す想定
-                    favoriteSpan.textContent = `お気に入り: ${issue.favorite_count ?? 0}`;
-                }
-
-                // コメント数
-                const commentSpan = document.querySelector('.comment-stat span');
-                if (commentSpan) {
-                    commentSpan.textContent = `コメント: ${issue.comments_count ?? 0}`;
-                }
-            }
-
-        // コメント表示(YES / NO など)
-        function displayComments(comments) {
-            // 例: 分けたいなら2つのコンテナに分けて表示
-        }
-        /**
-         * YES/NOコメントを表示する
-         * @param {Array} comments - スタンスコメント配列
-         * @param {string} containerId - 表示先のコンテナID
-         * @param {string} stanceValue - 'YES' or 'NO'
-         */
-        function displayComments(comments, containerId, stanceValue) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-    
-            container.innerHTML = ''; // 既存のコメントをクリア
-            const filtered = comments.filter(c => c.stance === stanceValue);
-    
-            filtered.forEach(comment => {
-                const div = document.createElement('div');
-                div.className = 'comment';
-                div.innerHTML = `
-                    <div class="comment-header">
-                        <div class="info">
-                            <strong>${comment.username || '名無しさん'}</strong> - ${new Date(comment.created_at).toLocaleString()}
-                        </div>
-                        <div class="likes">
-                            <i class="fas fa-thumbs-up"></i> ${comment.likes || 0}
-                        </div>
-                    </div>
-                    <div class="comment-details">
-                        ${comment.comment || ''}
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
-        
-        </script>
-        <script src="/js/issue-detail.js"></script>
-        <div class="footer">
-            <h5>SERON EXCHANGE 2025 All Rights Reserved.</h5>
-        </div>    
-
-    </body>
-    </html>
+    <div class="footer">
+        <h5>SERON EXCHANGE 2025 All Rights Reserved.</h5>
+    </div>
+</body>
+</html>

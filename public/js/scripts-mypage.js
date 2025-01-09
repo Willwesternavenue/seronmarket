@@ -250,10 +250,12 @@ function createIssueCard(issue) {
             <div class="vote-bar-container">
                 <div class="vote-bar vote-bar-yes ${getWidthClass(issue.yes_percent)}"></div>
                 <div class="vote-bar vote-bar-no ${getWidthClass(issue.no_percent)}"></div>
+                <div class="vote-bar vote-bar-maybe ${getWidthClass(issue.maybe_percent)}"></div>
             </div>
             <div class="vote-counts">
                 <span>YES: ${sanitizePercentage(issue.yes_percent)}%</span>
                 <span>NO: ${sanitizePercentage(issue.no_percent)}%</span>
+                <span>MAYBE: ${sanitizePercentage(issue.maybe_percent)}%</span>
             </div>
             <button class="like-button" data-issue-id="${issue.id}">
                 関心あり (${issue.likes || 0})

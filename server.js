@@ -351,7 +351,10 @@ app.get('/api/issues/:issue_id/comments', (req, res) => {
         FROM stances
         LEFT JOIN users ON stances.user_id = users.id
         WHERE stances.issue_id = ?
+            AND stances.comment IS NOT NULL
+            AND TRIM(stances.comment) != ''
         ORDER BY stances.created_at DESC
+        LIMIT 1;
     `;
  
     db.all(sql, [issueId], (err, rows) => {
@@ -603,7 +606,31 @@ app.get('/api/issues/:issue_id', (req, res) => {
                 SELECT COUNT(*)
                 FROM comments
                 WHERE comments.issue_id = issues.id
-            ) as comments_count
+            ) as comments_count,
+
+            -- YES の数をカウント
+            (
+                SELECT COUNT(*)
+                FROM stances
+                WHERE stances.issue_id = issues.id
+                AND stances.stance = 'YES'
+            ) as yes_count,
+
+            -- NO の数をカウント
+            (
+                SELECT COUNT(*)
+                FROM stances
+                WHERE stances.issue_id = issues.id
+                AND stances.stance = 'NO'
+            ) as no_count,
+
+            -- 様子見 (Maybe) の数をカウント
+            (
+                SELECT COUNT(*)
+                FROM stances
+                WHERE stances.issue_id = issues.id
+                AND stances.stance = '様子見'
+            ) as maybe_count
         FROM issues
         LEFT JOIN categories ON issues.category_id = categories.id
         LEFT JOIN users ON issues.created_by = users.id
@@ -645,18 +672,13 @@ app.get('/api/issues/:issue_id', (req, res) => {
 
             // 3. 結果をクライアントに送信
             res.json({
-                issue: issueRow,       // イシュー詳細情報
+                issue: issueRow,       // イシュー詳細情報 (YES/NO/Maybe 含む)
                 comments: commentRows  // 最新3件のコメント
             });
         });
     });
 });
 
-
-
-
-
-// YES/NO/様子見スタンス
 // YES/NO/様子見スタンス
 app.post('/api/stances', isAuthenticated, (req, res) => {
     const { issue_id, stance, comment } = req.body;

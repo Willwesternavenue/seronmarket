@@ -209,3 +209,7 @@
     display: inline-block;
     margin-bottom: 12px;
 }
+.vote-bar-maybe {
+    background-color: gray; /* お好みの色 */
+  }
+  
