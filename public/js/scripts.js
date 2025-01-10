@@ -1,101 +1,124 @@
 // public/js/scripts.js
-
 document.addEventListener('DOMContentLoaded', () => {
-    // ユーザー情報を取得して表示
+    // ユーザー情報を取得
     fetch('/api/user')
         .then(handleFetchResponse)
         .then(data => {
-            document.getElementById('username').textContent = data.username;
-            document.getElementById('is-admin-checkbox').checked = data.isAdmin;
+            const usernameElement = document.getElementById('username');
+            const isAdminCheckbox = document.getElementById('is-admin-checkbox');
+        
+            if (usernameElement) usernameElement.textContent = data.username;
+            if (isAdminCheckbox) isAdminCheckbox.checked = data.isAdmin;
         })
         .catch(err => {
-            console.error('Error fetching user info:', err);
-            alert('ユーザー情報の取得に失敗しました。');
+            console.error('Error fetching user data:', err);
+            alert('ユーザーデータの取得に失敗しました。');
         });
 
     // イシュー作成フォームの送信を処理
     const createIssueForm = document.getElementById('create-issue-form');
-    createIssueForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        
-        const headline = document.getElementById('headline').value.trim();
-        const description = document.getElementById('description').value.trim();
-        const tag = document.getElementById('tag').value;
-        const isFeatured = document.getElementById('isFeatured').checked;
+    if (createIssueForm) {
+        createIssueForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            
+            const headline = document.getElementById('headline').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const tag = document.getElementById('tag').value;
+            const isFeatured = document.getElementById('isFeatured').checked;
 
-        if (!headline || !description || !tag) {
-            alert('すべてのフィールドを入力してください。');
-            return;
-        }
+            if (!headline || !description || !tag) {
+                alert('すべてのフィールドを入力してください。');
+                return;
+            }
 
-        const issueData = { headline, description, tag, isFeatured };
+            const issueData = { headline, description, tag, isFeatured };
 
-        fetch('/api/issues', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(issueData)
-        })
-        .then(handleFetchResponse)
-        .then(data => {
-            alert('イシューが正常に作成されました。');
-            createIssueForm.reset();
-            // 必要に応じてイシュー一覧を再取得・更新
-            refreshIssues();
-        })
-        .catch(err => {
-            console.error('Error creating issue:', err);
-            alert(`イシューの作成に失敗しました: ${err.message}`);
+            fetch('/api/issues', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(issueData)
+            })
+            .then(handleFetchResponse)
+            .then(data => {
+                alert('イシューが正常に作成されました。');
+                createIssueForm.reset();
+                refreshIssues();
+            })
+            .catch(err => {
+                console.error('Error creating issue:', err);
+                alert(`イシューの作成に失敗しました: ${err.message}`);
+            });
         });
-    });
+    }
 
     // スタンス投稿フォームの送信を処理
     const postStanceForm = document.getElementById('post-stance-form');
-    postStanceForm.addEventListener('submit', (event) => {
-        event.preventDefault();
+    if (postStanceForm) {
+        postStanceForm.addEventListener('submit', (event) => {
+            event.preventDefault();
 
-        const issueId = document.getElementById('issue').value;
-        const stance = document.getElementById('stance').value;
-        const comment = document.getElementById('comment').value.trim();
+            const issueId = document.getElementById('issue').value;
+            const stance = document.getElementById('stance').value;
+            const comment = document.getElementById('comment').value.trim();
 
-        if (!issueId || !stance) {
-            alert('イシューとスタンスを選択してください。');
-            return;
-        }
+            if (!issueId || !stance) {
+                alert('イシューとスタンスを選択してください。');
+                return;
+            }
 
-        const stanceData = { issue_id: issueId, stance, comment: comment || null };
+            const stanceData = { issue_id: issueId, stance, comment: comment || null };
 
-        fetch('/api/stances', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(stanceData)
-        })
-        .then(handleFetchResponse)
-        .then(data => {
-            alert('スタンスが正常に投稿されました。');
-            postStanceForm.reset();
-            // 必要に応じてイシュー一覧を再取得・更新
-            refreshIssues();
-        })
-        .catch(err => {
-            console.error('Error posting stance:', err);
-            alert(`スタンスの投稿に失敗しました: ${err.message}`);
+            fetch('/api/stances', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(stanceData)
+            })
+            .then(handleFetchResponse)
+            .then(data => {
+                alert('スタンスが正常に投稿されました。');
+                postStanceForm.reset();
+                refreshIssues();
+            })
+            .catch(err => {
+                console.error('Error posting stance:', err);
+                alert(`スタンスの投稿に失敗しました: ${err.message}`);
+            });
         });
-    });
-
-    // イシュー一覧を再取得・更新する関数
-    function refreshIssues() {
-        // フィーチャーイシューとその他のイシューをそれぞれ再取得
-        displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
-        displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard);
     }
 
-    // 初回ロード時にイシュー一覧を取得
+    // 初期ロード時にイシューを取得
     refreshIssues();
 });
+
+// イシュー一覧を再取得・更新する関数
+async function refreshIssues() {
+    try {
+        const [featuredIssues, otherIssues] = await Promise.all([
+            fetch('/api/featured_issues').then(handleFetchResponse),
+            fetch('/api/issues_with_votes').then(handleFetchResponse),
+        ]);
+
+        // フィーチャーイシューを表示
+        const featuredContainer = document.getElementById('featured-issues');
+        featuredContainer.innerHTML = featuredIssues.length
+            ? featuredIssues.map(createFeaturedIssueCard).join('')
+            : '<p>現在データはありません。</p>';
+
+        // その他のイシューを表示
+        const otherContainer = document.getElementById('existingIssues');
+        otherContainer.innerHTML = otherIssues.length
+            ? otherIssues.map(createOtherIssueCard).join('')
+            : '<p>現在データはありません。</p>';
+
+    } catch (err) {
+        console.error('Error refreshing issues:', err);
+        alert('イシューリストの更新に失敗しました。');
+    }
+}
 
 /**
  * APIレスポンスを処理
@@ -104,8 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 function handleFetchResponse(response) {
     if (!response.ok) {
-        return response.json().then(err => {
-            throw new Error(err.error || 'Unknown error');
+        return response.json().catch(() => ({ error: '不明なエラー' })).then(err => {
+            throw new Error(err.error || '不明なエラー');
         });
     }
     return response.json();
@@ -238,15 +261,34 @@ function displayIssues(url, containerId, cardCreator) {
                 return;
             }
 
-            // イシューを表示
-            container.innerHTML = data.length
-                ? data.map(cardCreator).join('')
-                : '<p>現在データはありません。</p>';
+            // イシューを表示（安全な方法でHTMLを生成）
+            container.innerHTML = '';
+            if (data.length > 0) {
+                data.forEach(issue => {
+                    const sanitizedHTML = sanitizeHTML(cardCreator(issue)); // サニタイズを追加
+                    const issueElement = document.createElement('div');
+                    issueElement.innerHTML = sanitizedHTML;
+                    container.appendChild(issueElement);
+                });
+            } else {
+                container.innerHTML = '<p>現在データはありません。</p>';
+            }
         })
         .catch(err => {
             console.error(`Error fetching issues from ${url}:`, err);
             container.innerHTML = '<p>データの取得に失敗しました。</p>';
         });
+}
+
+/**
+ * HTML文字列をサニタイズして安全なHTMLとして返す
+ * @param {string} html - サニタイズするHTML文字列
+ * @returns {string} - サニタイズ済みHTML
+ */
+function sanitizeHTML(html) {
+    const tempDiv = document.createElement('div');
+    tempDiv.textContent = html; // テキストとしてエスケープ
+    return tempDiv.innerHTML;
 }
 
 /**

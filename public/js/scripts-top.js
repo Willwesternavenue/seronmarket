@@ -1,405 +1,71 @@
-// public/js/scripts-top.js
+/***********************************
+ *  定数・ヘルパー関数
+ ***********************************/
+const API_ENDPOINTS = {
+    FEATURED_ISSUES: '/api/featured_issues',
+    ISSUES_WITH_VOTES: '/api/issues_with_votes',
+    CATEGORIES: '/api/categories',
+    SEARCH_ISSUES: '/api/issues/search',
+};
 
-const PORT = 3000;
-
-document.addEventListener('DOMContentLoaded', () => {
-    // 1) 初期表示：フィーチャーイシュー & その他のイシューを表示
-    displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
-    displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard);
-    // 2) アクションボタンのクリック & キーボード操作に対応
-    document.addEventListener('click', handleActionButtonClickEvent);
-    document.addEventListener('keypress', handleActionButtonKeyPress);
-    // 3) カテゴリタブ生成＆タブ切り替え処理
-    const tabsContainer = document.querySelector('.tabs');
-    if (tabsContainer) {
-        fetchCategories(); // カテゴリタブの生成
-        tabsContainer.addEventListener('click', (e) => {
-            if (!e.target.classList.contains('tab-button')) return;
-            
-            // アクティブ状態の切り替え
-            const activeTab = tabsContainer.querySelector('.tab-button.active');
-            if (activeTab) {
-                activeTab.classList.remove('active');
-            }
-            e.target.classList.add('active');
-
-            const categoryId = e.target.dataset.category;
-
-            // "all" 選択なら全件表示、それ以外はカテゴリフィルタ
-            if (categoryId === 'all') {
-                displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
-                displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard);
-            } else {
-                displayIssues(`/api/featured_issues?category_id=${categoryId}`, 'featured-issues', createFeaturedIssueCard);
-                displayIssues(`/api/issues_with_votes?category_id=${categoryId}`, 'existingIssues', createOtherIssueCard);
-            }
-        });
-    }
-    const searchForm = document.getElementById('searchForm');
-    const searchInput = document.getElementById('searchInput');
-    if (searchForm && searchInput) {
-        searchForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // ページリロードを防ぐ
-            const query = searchInput.value.trim();
-            searchIssues(query);
-        });
-    }
-});
-    
 /**
- * アクションボタンのクリック処理
+ * APIレスポンスを処理
  */
-function handleActionButtonClickEvent(event) {
-    const button = event.target.closest('.action-buttons button');
-    if (!button) return;
-
-    const action = getActionFromButton(button);
-    const issueId = button.dataset.issueId;
-    if (action && issueId) {
-        handleActionButtonClick(action, issueId, button);
+function handleFetchResponse(response) {
+    if (!response.ok) {
+        return response.json().then(err => {
+            throw new Error(err.error || 'Unknown error');
+        });
     }
+    return response.json();
 }
 
 /**
- * アクションボタンのキーボード操作
+ * エラーを表示
  */
-function handleActionButtonKeyPress(event) {
-    const button = event.target.closest('.action-buttons button');
-    if (!button) return;
-
-    // Enter または Space のときアクション実行
-    if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        const action = getActionFromButton(button);
-        const issueId = button.dataset.issueId;
-        if (action && issueId) {
-            handleActionButtonClick(action, issueId, button);
+function displayError(message, containerId = null) {
+    if (containerId) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = `<p>${sanitizeHTML(message)}</p>`;
         }
     }
+    console.error(message);
 }
 
 /**
- * カテゴリ一覧を取得してタブを生成
+ * テキストをサニタイズ
  */
-function fetchCategories() {
-    fetch('/api/categories')
-        .then(handleFetchResponse)
-        .then(categories => {
-            const tabsContainer = document.querySelector('.tabs');
-            if (!tabsContainer) return;
-
-            // 初期状態（全て）ボタンをクリアして再生成
-            tabsContainer.innerHTML = '';
-            const allButton = document.createElement('button');
-            allButton.className = 'tab-button active';
-            allButton.dataset.category = 'all';
-            allButton.textContent = '全カテゴリ';
-            tabsContainer.appendChild(allButton);
-
-            // APIで取得したカテゴリをタブに追加
-            categories.forEach(category => {
-                const button = document.createElement('button');
-                button.className = `tab-button category- ${category.id}`;
-                button.dataset.category = category.id;
-                button.textContent = category.name;
-                tabsContainer.appendChild(button);
-            });
-        })
-        .catch(err => console.error('Error fetching categories:', err));
+function sanitizeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
 }
 
 /**
- * イシューを取得して「issues-container」に表示
- * @param {number|null} categoryId - フィルタしたいカテゴリID (null の場合は全て)
+ * 数値をパーセント表記に変換
  */
-function fetchIssues(categoryId = null) {
-    const endpoint = categoryId 
-        ? `/api/issues?category_id=${categoryId}` 
-        : '/api/issues';
-    fetch(endpoint)
-        .then(handleFetchResponse)
-        .then(issues => {
-            const issuesContainer = document.getElementById('issues-container');
-            if (!issuesContainer) return;
-
-            if (!Array.isArray(issues)) {
-                issuesContainer.innerHTML = '<p>イシューの取得に失敗しました。</p>';
-                return;
-            }
-
-            // 表示用HTML
-            issuesContainer.innerHTML = issues.map(issue => `
-                <div class="issue-card">
-                    <h3>${sanitizeHTML(issue.headline)}</h3>
-                    <p>カテゴリ: ${sanitizeHTML(issue.category_name) || '未分類'}</p>
-                    <p>作成者: ${sanitizeHTML(issue.created_by) || '不明'}</p>
-                    <p>いいね: ${sanitizeHTML(issue.likes)}</p>
-                </div>
-            `).join('');
-        })
-        .catch(err => {
-            console.error('Error fetching issues:', err);
-            const issuesContainer = document.getElementById('issues-container');
-            if (issuesContainer) {
-                issuesContainer.innerHTML = '<p>イシューの取得に失敗しました。</p>';
-            }
-        });
-}
-
-function rotateComments(comments, containerSelector) {
-    const container = document.querySelector(containerSelector);
-    if (!container) {
-        console.error(`コメントのコンテナが見つかりません: ${containerSelector}`);
-        return;
-    }
-
-    const latestComments = comments.slice(0, 3);
-    let currentIndex = 0;
-
-    function displayComments(comments) {
-        const container = document.getElementById('comments-container');
-        if (!container) {
-            console.error('コメント表示用のコンテナが見つかりません。');
-            return;
-        }
-    
-        container.innerHTML = comments.map(c => `
-            <div class="comment">
-                <p>${sanitizeHTML(c.comment)}</p>
-            </div>
-        `).join('');
-    }
-    
-    if (latestComments.length > 0) {
-        displayComment(currentIndex);
-        setInterval(() => {
-            currentIndex = (currentIndex + 1) % latestComments.length;
-            displayComment(currentIndex);
-        }, 3000);
-    } else {
-        container.innerHTML = '<p>表示するコメントがありません。</p>';
-    }
-}
-
-function searchIssues(query) {
-    if (!query) {
-        // すべて再取得
-        displayIssues('/api/featured_issues', 'featured-issues', createFeaturedIssueCard);
-        displayIssues('/api/issues_with_votes', 'existingIssues', createOtherIssueCard);
-        return;
-    }
-    fetch(`/api/issues/search?q=${encodeURIComponent(query)}`)
-        .then(handleFetchResponse)
-        .then(issues => {
-            // 取得したissuesを "フィーチャー" と "その他" に振り分け
-            const featuredIssues = issues.filter(i => i.is_featured === 1);
-            const otherIssues = issues.filter(i => i.is_featured === 0);
-
-            // フィーチャー表示先
-            const featuredContainer = document.getElementById('featured-issues');
-            if (!featuredContainer) return;
-
-            // その他イシュー表示先
-            const existingContainer = document.getElementById('existingIssues');
-            if (!existingContainer) return;
-
-            // いったんクリア
-            featuredContainer.innerHTML = '';
-            existingContainer.innerHTML = '';
-
-            // フィーチャー表示
-            if (featuredIssues.length === 0) {
-                featuredContainer.innerHTML = `<p>「${query}」に一致するフィーチャーイシューはありません。</p>`;
-            } else {
-                featuredIssues.forEach(issue => {
-                    const cardHTML = createFeaturedIssueCard(issue);
-                    const cardElement = document.createElement('div');
-                    cardElement.innerHTML = cardHTML;
-                    featuredContainer.appendChild(cardElement);
-
-                    // コメント取得
-                    fetchAndDisplayComments(issue.id, cardElement);
-                });
-            }
-
-            // その他イシュー表示
-            if (otherIssues.length === 0) {
-                existingContainer.innerHTML = `<p>「${query}」に一致するイシューはありません。</p>`;
-            } else {
-                otherIssues.forEach(issue => {
-                    const cardHTML = createOtherIssueCard(issue);
-                    const cardElement = document.createElement('div');
-                    cardElement.innerHTML = cardHTML;
-                    existingContainer.appendChild(cardElement);
-
-                    // コメント取得
-                    fetchAndDisplayComments(issue.id, cardElement);
-                });
-            }
-        })
-        .catch(err => {
-            console.error('Error searching issues:', err);
-        });
+function sanitizePercentage(percent) {
+    const parsed = parseFloat(percent);
+    if (isNaN(parsed) || parsed < 0) return '0';
+    if (parsed > 100) return '100';
+    return parsed.toFixed(1);
 }
 
 /**
- * ボタンからアクションを取得
- * @param {HTMLElement} button - クリックされたボタン
- * @returns {string|null} - アクション名（like, favorite, comment, stance）またはnull
+ * テキストを指定された長さに制限
  */
-function getActionFromButton(button) {
-    if (button.classList.contains('like-button')) return 'like';
-    if (button.classList.contains('favorite-button')) return 'favorite';
-    if (button.classList.contains('comment-button')) return 'comment';
-    if (button.classList.contains('stance-button')) return 'stance';
-    return null;
+function truncateText(text, maxLength) {
+    if (!text || text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
 }
+
+/***********************************
+ *  カード生成関数
+ ***********************************/
 
 /**
- * アクションボタンのクリックを処理
- * @param {string} action - アクションの種類（like, favorite, comment, stance）
- * @param {number} issueId - イシューのID
- * @param {HTMLElement} button - クリックされたボタン
- */
-function handleActionButtonClick(action, issueId, button) {
-    let endpoint = '';
-    let method = 'POST';
-    let body = {};
-
-    switch(action) {
-        case 'like':
-            endpoint = `/api/issues/${issueId}/like`;
-            break;
-        case 'stance':
-            const userStance = prompt('スタンスを選択してください (YES, NO, 様子見):');
-            if (!['YES', 'NO', '様子見'].includes(userStance)) {
-                alert('有効なスタンスを選択してください。');
-                return;
-            }
-            const stanceComment = prompt('スタンスに関するコメントを入力してください (任意):');
-            endpoint = `/api/stances`;
-            body = { issue_id: issueId, stance: userStance, comment: stanceComment || null };
-            break;
-        default:
-            console.error('Unknown action:', action);
-            return;
-    }
-
-    fetch(endpoint, {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: Object.keys(body).length > 0 ? JSON.stringify(body) : null
-    })
-    .then(handleFetchResponse)
-    .then(data => {
-        alert(`${getActionName(action)}しました！`);
-        if (action === 'like') {
-            updateButtonCount(button, data.likes || 0); // "いいね" の場合
-        } else if (action === 'stance') {
-            updateButtonCount(button, data.stance_count || 0); // スタンスの場合
-        }
-    })
-    .catch(err => {
-        console.error(`Error performing ${action} on issue ${issueId}:`, err);
-        alert(`${getActionName(action)}に失敗しました: ${err.message}`);
-    });
-}
-
-/**
- * アクション名を取得
- * @param {string} action - アクションの種類
- * @returns {string} - 表示用のアクション名
- */
-function getActionName(action) {
-    switch(action) {
-        case 'stance': return 'スタンス';
-        case 'like': return 'いいね';
-        case 'favorite': return 'お気に入り';
-        case 'comment': return 'コメント';
-        default: return 'アクション';
-    }
-}
-
-/**
- * ボタンのカウントを更新
- * @param {HTMLElement} button - 更新するボタン
- * @param {number} newCount - 新しいカウント値
- */
-function updateButtonCount(button, newCount) {
-    const countSpan = button.querySelector('.count');
-    if (countSpan) {
-        countSpan.textContent = `(${newCount})`;
-    }
-}
-function fetchAndDisplayComments(issueId, cardElement) {
-    fetch(`/api/issues/${issueId}/comments`)
-        .then(handleFetchResponse)
-        .then(comments => {
-            const commentsSection = cardElement.querySelector('.comments-section');
-            if (!commentsSection) return;
-
-            if (comments.length > 0) {
-                const latestComment = comments[0]; // 最新のコメント1件を取得
-                const singleCommentHTML = `
-                    <div class="comment">
-                        <p>${sanitizeHTML(latestComment.comment)}</p>
-                        <small>- ${sanitizeHTML(latestComment.username || '名無しさん')} - ${new Date(latestComment.created_at).toLocaleString()}</small>
-                    </div>
-                `;
-                commentsSection.innerHTML = singleCommentHTML;
-            } else {
-                commentsSection.innerHTML = '<p>（まだコメントはありません）</p>';
-            }
-        })
-        .catch(err => {
-            console.error(`Error fetching comments for issue ${issueId}:`, err);
-            const commentsSection = cardElement.querySelector('.comments-section');
-            if (commentsSection) {
-                commentsSection.innerHTML = '<p>コメントの取得に失敗しました。</p>';
-            }
-        });
-}
-
-/**
- * APIからデータを取得して表示
- * @param {string} url - APIエンドポイントのURL
- * @param {string} containerId - 表示先のコンテナID
- * @param {function} cardCreator - カードを生成する関数
- */
-function displayIssues(url, containerId, cardCreator) {
-    const container = document.getElementById(containerId);
-    if (!container) {
-        console.error(`コンテナ ${containerId} が見つかりませんでした。`);
-        return;
-    }
-
-    fetch(url)
-        .then(handleFetchResponse)
-        .then(issues => {
-            container.innerHTML = ''; // 初期化
-            issues.forEach(issue => {
-                const cardHTML = cardCreator(issue);
-                const cardElement = document.createElement('div');
-                cardElement.innerHTML = cardHTML;
-                container.appendChild(cardElement);
-
-                // コメントを非同期で取得して表示
-                fetchAndDisplayComments(issue.id, cardElement);
-            });
-        })
-        .catch(err => {
-            console.error(`Error fetching issues from ${url}:`, err);
-            container.innerHTML = '<p>データの取得に失敗しました。</p>';
-        });
-}
-
-
-/**
- * フィーチャーイシューカードを生成
- * @param {Object} issue - イシュー情報
- * @returns {string} - HTML文字列
+ * フィーチャーイシューカードを生成（コメント表示あり）
  */
 function createFeaturedIssueCard(issue) {
     const yesPercent = sanitizePercentage(issue.yes_percent);
@@ -407,13 +73,13 @@ function createFeaturedIssueCard(issue) {
     const favoritesCount = issue.favorites || 0;
     const categoryClass = issue.category_id ? `category-${issue.category_id}` : 'category-default';
 
-    // コメントセクションのプレースホルダーを追加
     return `
         <div class="featured-issue-card ${categoryClass}">
             <span class="issue-category">${sanitizeHTML(issue.category_name)}</span>
             <a href="/issue.html?issue_id=${issue.id}">
                 <h3 class="multiline-ellipsis">${sanitizeHTML(issue.headline)}</h3>
             </a>
+            <!-- コメントセクション（フィーチャーは表示）-->
             <div class="comments-section">
                 <p>コメントを取得中...</p>
             </div>
@@ -442,23 +108,9 @@ function createFeaturedIssueCard(issue) {
         </div>
     `;
 }
-/**
- * その他のイシューカードを生成// Expressの例:
-app.get('/api/issues/search', async (req, res) => {
-  try {
-    const q = req.query.q || '';
-    // ここでDBなどからタイトルや本文などが q に部分一致するイシューを取得
-    // 例: SELECT * FROM issues WHERE headline LIKE '%q%'
-    const matchingIssues = await getIssuesBySearch(q);
-    res.json(matchingIssues);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: '検索に失敗しました' });
-  }
-});
 
- * @param {Object} issue - イシュー情報
- * @returns {string} - HTML文字列
+/**
+ * その他のイシューカードを生成（コメント表示なし）
  */
 function createOtherIssueCard(issue) {
     const yesPercent = sanitizePercentage(issue.yes_percent);
@@ -470,10 +122,15 @@ function createOtherIssueCard(issue) {
         <div class="other-issue-card ${categoryClass}">
             <span class="issue-category">${sanitizeHTML(issue.category_name)}</span>
             <a href="/issue.html?issue_id=${issue.id}">
-                <h4 class="issue-title multiline-ellipsis">
-                ${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
+                <h4 class="issue-title multiline-ellipsis">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
             </a>
-                <div class="vote-bar-container">
+            <!-- コメントセクション（その他イシューでは非表示）-->
+            <!-- コメントを再度表示したくなった場合は、下記を追加
+                <div class="comments-section">
+                    <p>コメントを取得中...</p>
+                </div>
+             -->
+            <div class="vote-bar-container">
                 <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>
                 <div class="vote-bar-no" style="width: ${noPercent}%;"></div>
             </div>
@@ -481,7 +138,6 @@ function createOtherIssueCard(issue) {
                 <span>YES ${yesPercent}%</span>
                 <span>NO ${noPercent}%</span>
             </div>
-
             <div class="action-buttons">
                 <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
                     <i class="fas fa-hand-paper icon"></i> ${issue.stance_count || 0}
@@ -500,67 +156,324 @@ function createOtherIssueCard(issue) {
     `;
 }
 
+/***********************************
+ *  イシュー表示（コメント表示はフィーチャーのみ）
+ ***********************************/
+
 /**
- * サニタイズ関数
- * @param {string} str - サニタイズする文字列
- * @returns {string}
+ * イシューを取得 & カード表示
+ * @param {string} url 
+ * @param {string} containerId 
+ * @param {function} cardCreator 
+ * @param {boolean} withComments - フィーチャーイシューかどうか
  */
-function sanitizeHTML(str) {
-    const tempDiv = document.createElement('div');
-    tempDiv.textContent = str || '';
-    return tempDiv.innerHTML;
+function displayIssues(url, containerId, cardCreator, withComments = false) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`コンテナ ${containerId} が見つかりませんでした。`);
+        return;
+    }
+
+    fetch(url)
+        .then(handleFetchResponse)
+        .then(issues => {
+            container.innerHTML = '';
+            issues.forEach(issue => {
+                const cardHTML = cardCreator(issue);
+                const cardElement = document.createElement('div');
+                cardElement.innerHTML = cardHTML;
+                container.appendChild(cardElement);
+
+                // フィーチャーイシューの場合のみコメントを取得
+                if (withComments) {
+                    fetch(`/api/issues/${issue.id}/comments`)
+                        .then(handleFetchResponse)
+                        .then(comments => updateCommentsSection(cardElement, comments))
+                        .catch(err => {
+                            console.error(`Failed to fetch comments for issue ${issue.id}:`, err);
+                            updateCommentsSection(cardElement, [], true);
+                        });
+                }
+            });
+        })
+        .catch(err => {
+            console.error(`Error fetching issues from ${url}:`, err);
+            displayError('データの取得に失敗しました。', containerId);
+        });
 }
 
 /**
- * パーセンテージをサニタイズ
- * @param {number|string} percent - サニタイズするパーセンテージ
- * @returns {string}
+ * コメントセクションを更新
  */
-function sanitizePercentage(percent) {
-    const parsedPercent = parseFloat(percent);
-    return isNaN(parsedPercent) || parsedPercent < 0
-        ? '0'
-        : parsedPercent.toFixed(1);
+function updateCommentsSection(cardElement, comments, isError = false) {
+    const commentsSection = cardElement.querySelector('.comments-section');
+    if (!commentsSection) return; // その他イシューにはコメントセクションがない（現在）
+
+    if (isError) {
+        commentsSection.innerHTML = '<p>コメントの取得に失敗しました。</p>';
+        return;
+    }
+
+    if (!comments || comments.length === 0) {
+        commentsSection.innerHTML = '<p>（まだコメントはありません）</p>';
+    } else {
+        const latestComment = comments[0]; 
+        commentsSection.innerHTML = `
+            <div class="comment">
+                <p>${sanitizeHTML(latestComment.comment)}</p>
+                <small>- ${sanitizeHTML(latestComment.username || '名無しさん')} - 
+                       ${new Date(latestComment.created_at).toLocaleString()}</small>
+            </div>
+        `;
+    }
+}
+
+/***********************************
+ *  タブ & 検索機能
+ ***********************************/
+
+function fetchCategories() {
+    fetch(API_ENDPOINTS.CATEGORIES)
+        .then(handleFetchResponse)
+        .then(categories => {
+            const tabsContainer = document.querySelector('.tabs');
+            if (!tabsContainer) return;
+
+            // 初期状態（all）ボタン
+            tabsContainer.innerHTML = '';
+            const allButton = document.createElement('button');
+            allButton.className = 'tab-button active';
+            allButton.dataset.category = 'all';
+            allButton.textContent = '全カテゴリ';
+            tabsContainer.appendChild(allButton);
+
+            // カテゴリボタン
+            categories.forEach(cat => {
+                const button = document.createElement('button');
+                button.className = `tab-button category-${cat.id}`;
+                button.dataset.category = cat.id;
+                button.textContent = cat.name;
+                tabsContainer.appendChild(button);
+            });
+        })
+        .catch(err => console.error('Error fetching categories:', err));
+}
+
+function searchIssues(query) {
+    if (!query) {
+        // 全件再表示
+        displayIssues(API_ENDPOINTS.FEATURED_ISSUES, 'featured-issues', createFeaturedIssueCard, true);
+        displayIssues(API_ENDPOINTS.ISSUES_WITH_VOTES, 'existingIssues', createOtherIssueCard, false);
+        return;
+    }
+    fetch(`${API_ENDPOINTS.SEARCH_ISSUES}?query=${encodeURIComponent(query)}`)
+        .then(handleFetchResponse)
+        .then(issues => {
+            // フィーチャー・その他に分割
+            const featured = issues.filter(i => i.is_featured === 1);
+            const others   = issues.filter(i => i.is_featured === 0);
+
+            // フィーチャーのみ withComments = true
+            renderIssues('featured-issues', featured, createFeaturedIssueCard, true);
+            // その他イシュー withComments = false
+            renderIssues('existingIssues', others, createOtherIssueCard, false);
+        })
+        .catch(err => console.error('Error searching issues:', err));
 }
 
 /**
- * テキストを指定された長さに制限
- * @param {string} text - 元のテキスト
- * @param {number} maxLength - 最大文字数
- * @returns {string} - 制限後のテキスト
+ * イシュー配列を表示
  */
-function truncateText(text, maxLength) {
-    if (!text || text.length <= maxLength) return text;
-    return text.slice(0, maxLength) + '...';
+function renderIssues(containerId, issues, cardCreator, withComments = false) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`コンテナ ${containerId} が見つかりませんでした。`);
+        return;
+    }
+    container.innerHTML = '';
+    issues.forEach(issue => {
+        const cardHTML = cardCreator(issue);
+        const cardElement = document.createElement('div');
+        cardElement.innerHTML = cardHTML;
+        container.appendChild(cardElement);
+
+        // フィーチャーだけコメント取得
+        if (withComments) {
+            fetch(`/api/issues/${issue.id}/comments`)
+                .then(handleFetchResponse)
+                .then(comments => updateCommentsSection(cardElement, comments))
+                .catch(err => {
+                    console.error(`Failed to fetch comments for issue ${issue.id}:`, err);
+                    updateCommentsSection(cardElement, [], true);
+                });
+        }
+    });
+}
+
+/***********************************
+ *  アクションボタン処理
+ ***********************************/
+
+/**
+ * ボタンからアクションを取得
+ */
+function getActionFromButton(button) {
+    if (button.classList.contains('like-button')) return 'like';
+    if (button.classList.contains('favorite-button')) return 'favorite';
+    if (button.classList.contains('comment-button')) return 'comment';
+    if (button.classList.contains('stance-button')) return 'stance';
+    return null;
 }
 
 /**
- * APIレスポンスを処理
- * @param {Response} response - Fetch APIレスポンス
- * @returns {Promise<Object>}
+ * アクションボタンクリック
  */
-function handleFetchResponse(response) {
-    if (!response.ok) {
-        return response.json().then(err => {
-            throw new Error(err.error || 'Unknown error');
+function handleActionButtonClickEvent(e) {
+    handleActionButtonEvent(e, false);
+}
+function handleActionButtonKeyPress(e) {
+    handleActionButtonEvent(e, true);
+}
+
+function handleActionButtonEvent(event, isKeyPress = false) {
+    const button = event.target.closest('.action-buttons button');
+    if (!button) return;
+
+    if (isKeyPress && !['Enter', ' '].includes(event.key)) return;
+
+    const action = getActionFromButton(button);
+    const issueId = button.dataset.issueId;
+    if (action && issueId) handleActionButtonClick(action, issueId, button);
+}
+
+/**
+ * アクション処理
+ */
+function handleActionButtonClick(action, issueId, button) {
+    let endpoint = '';
+    let method = 'POST';
+    let body = {};
+
+    switch(action) {
+        case 'like':
+            endpoint = `/api/issues/${issueId}/like`;
+            break;
+        case 'stance':
+            const userStance = prompt('スタンスを選択 (YES, NO, 様子見):');
+            if (!['YES', 'NO', '様子見'].includes(userStance)) {
+                alert('有効なスタンスを選択してください。');
+                return;
+            }
+            const stanceComment = prompt('コメントを入力 (任意):');
+            endpoint = `/api/stances`;
+            body = { issue_id: issueId, stance: userStance, comment: stanceComment || null };
+            break;
+        default:
+            console.error('Unknown action:', action);
+            return;
+    }
+
+    fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: Object.keys(body).length ? JSON.stringify(body) : null
+    })
+        .then(handleFetchResponse)
+        .then(data => {
+            alert(`${getActionName(action)}しました！`);
+            if (action === 'like') {
+                updateButtonCount(button, data.likes || 0);
+            } else if (action === 'stance') {
+                updateButtonCount(button, data.stance_count || 0);
+            }
+        })
+        .catch(err => {
+            console.error(`Error performing ${action} on issue ${issueId}:`, err);
+            alert(`${getActionName(action)}に失敗しました: ${err.message}`);
+        });
+}
+
+/**
+ * アクション名
+ */
+function getActionName(action) {
+    switch(action) {
+        case 'stance': return 'スタンス';
+        case 'like': return 'いいね';
+        case 'favorite': return 'お気に入り';
+        case 'comment': return 'コメント';
+        default: return 'アクション';
+    }
+}
+
+/**
+ * ボタンのカウントを更新
+ */
+function updateButtonCount(button, newCount) {
+    const countSpan = button.querySelector('.count');
+    if (countSpan) {
+        countSpan.textContent = `(${newCount})`;
+    } else {
+        console.warn('Count span not found in button:', button);
+    }
+}
+
+/***********************************
+ *  メインの初期処理
+ ***********************************/
+document.addEventListener('DOMContentLoaded', () => {
+    // 1) 初期表示：フィーチャーイシュー（withComments=true） & その他のイシュー（withComments=false）
+    displayIssues(API_ENDPOINTS.FEATURED_ISSUES, 'featured-issues', createFeaturedIssueCard, true);
+    displayIssues(API_ENDPOINTS.ISSUES_WITH_VOTES, 'existingIssues', createOtherIssueCard, false);
+
+    // 2) カテゴリタブ生成＆タブ切り替え処理
+    const tabsContainer = document.querySelector('.tabs');
+    if (tabsContainer) {
+        fetchCategories();
+        tabsContainer.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('tab-button')) return;
+            
+            // アクティブ状態切り替え
+            [...tabsContainer.querySelectorAll('.tab-button')].forEach(btn =>
+                btn.classList.toggle('active', btn === e.target)
+            );
+            const categoryId = e.target.dataset.category;
+            if (categoryId === 'all') {
+                displayIssues(API_ENDPOINTS.FEATURED_ISSUES, 'featured-issues', createFeaturedIssueCard, true);
+                displayIssues(API_ENDPOINTS.ISSUES_WITH_VOTES, 'existingIssues', createOtherIssueCard, false);
+            } else {
+                displayIssues(`${API_ENDPOINTS.FEATURED_ISSUES}?category_id=${categoryId}`, 'featured-issues', createFeaturedIssueCard, true);
+                displayIssues(`${API_ENDPOINTS.ISSUES_WITH_VOTES}?category_id=${categoryId}`, 'existingIssues', createOtherIssueCard, false);
+            }
         });
     }
-    return response.json();
-}
 
-function displayError(message) {
-    const errorContainer = document.getElementById('error-message');
-    if (errorContainer) {
-        errorContainer.textContent = message;
-        errorContainer.style.display = 'block';
+    // 3) 検索機能
+    const searchForm = document.getElementById('searchForm');
+    const searchInput = document.getElementById('searchInput');
+    if (searchForm && searchInput) {
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const query = searchInput.value.trim();
+            if (!query) {
+                // 再取得
+                displayIssues(API_ENDPOINTS.FEATURED_ISSUES, 'featured-issues', createFeaturedIssueCard, true);
+                displayIssues(API_ENDPOINTS.ISSUES_WITH_VOTES, 'existingIssues', createOtherIssueCard, false);
+            } else {
+                fetch(`${API_ENDPOINTS.SEARCH_ISSUES}?query=${encodeURIComponent(query)}`)
+                    .then(handleFetchResponse)
+                    .then(issues => {
+                        const featured = issues.filter(i => i.is_featured === 1);
+                        const others   = issues.filter(i => i.is_featured === 0);
+                        renderIssues('featured-issues', featured, createFeaturedIssueCard, true);
+                        renderIssues('existingIssues', others, createOtherIssueCard, false);
+                    })
+                    .catch(err => console.error('Error searching issues:', err));
+            }
+        });
     }
-}
 
-function createActionButton(className, label, iconClass, count) {
-    return `
-        <button class="${className}" tabindex="0" aria-label="${label}">
-            <i class="${iconClass} icon"></i>
-            <span class="count">(${count || 0})</span>
-        </button>
-    `;
-}
+    // 4) アクションボタンのクリック & キーボード操作
+    document.addEventListener('click', handleActionButtonClickEvent);
+    document.addEventListener('keypress', handleActionButtonKeyPress);
+});
