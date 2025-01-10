@@ -350,7 +350,7 @@ function fetchAndDisplayComments(issueId, cardElement) {
                 `;
                 commentsSection.innerHTML = singleCommentHTML;
             } else {
-                commentsSection.innerHTML = '<p>（まだコメントがありません）</p>';
+                commentsSection.innerHTML = '<p>（まだコメントはありません）</p>';
             }
         })
         .catch(err => {
