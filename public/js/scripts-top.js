@@ -99,7 +99,7 @@ function fetchCategories() {
             // APIで取得したカテゴリをタブに追加
             categories.forEach(category => {
                 const button = document.createElement('button');
-                button.className = `tab-button category-${category.id}`;
+                button.className = `tab-button category- ${category.id}`;
                 button.dataset.category = category.id;
                 button.textContent = category.name;
                 tabsContainer.appendChild(button);

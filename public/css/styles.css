@@ -167,7 +167,7 @@ a:hover {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    text-align: left;
+    text-align: center;
     transition: transform var(--transition-speed), box-shadow var(--transition-speed);
 }
 .other-issue-card{
@@ -182,7 +182,7 @@ a:hover {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    text-align: left;
+    text-align: center;
     transition: transform var(--transition-speed), box-shadow var(--transition-speed);
 }
 
