@@ -14,8 +14,13 @@
     <!-- Chart.js Data Labels Plugin CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
-    <!-- ★ 外部JSファイルを defer で読み込み、HTML がパースされた後に実行する -->
-    <script src="/js/issue-detail.js" defer></script>
+    <!-- 
+      ★ 分割した jsファイルを ES Modules として読み込み
+      1) chart.js    : Chart.js を用いた描画用ロジック
+      2) commentRenderer.js : コメント描画用ロジック
+      3) issue-detail.js     : メインスクリプト
+    -->
+    <script type="module" src="/js/issue-detail.js"></script>
 </head>
 <body>
     <div class="top-link"></div> <!-- ここにTOPページリンクが挿入されます -->
@@ -55,7 +60,6 @@
                     <span>シェア: 0</span>
                     <i class="fas fa-bullhorn"></i>
                 </div>
-
             </div>
         </div>
 
@@ -69,14 +73,14 @@
                 <canvas id="aiChart"></canvas>
                 <div class="legend">AI評価</div>
             </div>
-        </div></br>
+        </div><br />
 
         <!-- AIコメント欄 (固定) -->
         <div class="ai-comments">
             <h3><i class="fas fa-robot"></i> AI評価コメント </h3>
             <div class="ai-comment">
                 <p>「YES派のコメントの方が全体的に一貫性があり、合理的で説得力があります。一方NO派のコメントにはいくつか優れた反論となっている意見も見受けられたものの感情論が目立ち、客観的な正当性に乏しいコメントが多いようです」</p>
-            <i class="fas fa-thumbs-up"></i> 25
+                <i class="fas fa-thumbs-up"></i> 25
             </div>
         </div>
 
@@ -87,7 +91,6 @@
                 <h2><i class="fas fa-thumbs-up icon"></i> YES コメント</h2>
                 <div id="yes-comments"></div>
             </div>
-
             <!-- NOコメント -->
             <div class="comments-side">
                 <h2><i class="fas fa-thumbs-down icon"></i> NO コメント</h2>
