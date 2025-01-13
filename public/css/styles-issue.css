@@ -58,7 +58,7 @@
 /* Top stats & share */
 .top-stats-share {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     flex-wrap: wrap;
     margin-top: 20px;
@@ -212,4 +212,43 @@
 .vote-bar-maybe {
     background-color: gray; /* お好みの色 */
   }
-  
+  .issue-summary {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+}
+.ai-comment {
+    background-color: #f9f9f9;
+    justify-content: center;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+}
+/* 既存のCSSはそのままで、以下を追加 */
+.ai-comments h3 {
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;  /* アイコンとテキストの間隔 */
+}
+.ai-comment p {
+    margin: 0;
+    padding-bottom: 25px;  /* アイコン用のスペースを確保 */
+}
+
+.reaction-icons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;  /* アイコン間の間隔 */
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+}

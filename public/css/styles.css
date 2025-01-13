@@ -284,6 +284,7 @@ max-height: calc(1.4em * 2);       /* 2行分の高さ (行数に合わせて計
 
 .featured-issue-card .action-buttons {
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 8px; /* ギャップを縮小 */
     margin-top: 10px; /* マージンを縮小 */

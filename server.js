@@ -466,7 +466,7 @@ app.post('/api/issues', (req, res) => {
     const { headline, description, tag, is_featured } = req.body;
 
     if (!headline || !description || !tag) {
-        return res.status(400).json({ error: 'すべてのフィールドが必要です。' });
+        return res.status(400).json({ error: 'タイトルとカテゴリは必須です。' });
     }
 
     const checkSql = `SELECT id FROM issues WHERE headline = ?`;
@@ -479,15 +479,21 @@ app.post('/api/issues', (req, res) => {
         if (row) {
             return res.status(400).json({ error: '同じヘッドラインのイシューが既に存在します。' });
         }
+        const finalDescription = description && description.trim() !== '' ? description.trim() : 'このイシューの概要は自動生成されます。';
 
-        const insertSql = `INSERT INTO issues (headline, description, tag, is_featured) VALUES (?, ?, ?, ?)`;
-        db.run(insertSql, [headline, description, tag, is_featured ? 1 : 0], function (err) {
-            if (err) {
-                console.error('Database insert error:', err);
-                return res.status(500).json({ error: 'イシューの作成に失敗しました。' });
-            }
-            res.status(201).json({ id: this.lastID, message: 'イシューが正常に作成されました。' });
-        });
+        const insertSql = `
+            INSERT INTO issues (headline, description, category_id, is_featured)
+            VALUES (?, ?, (SELECT id FROM categories WHERE name = ?), ?)
+        `;
+
+db.run(insertSql, [headline, description, parseInt(tag,10), is_featured ? 1 : 0], function (err) {
+    if (err) {
+        console.error('Database insert error:', err);
+        return res.status(500).json({ error: 'イシューの作成に失敗しました。' });
+    }
+    res.status(201).json({ id: this.lastID, message: 'イシューが正常に作成されました。' });
+});
+
     });
 });
 
@@ -872,7 +878,7 @@ app.get('/api/featured_issues', (req, res) => {
             issues.headline,
             issues.description,
             issues.category_id,
-            categories.name AS category_name,
+            COALESCE(categories.name, '未分類') AS category_name,
             users.username AS author_name,
             issues.likes,
             COUNT(CASE WHEN stances.stance = 'YES' THEN 1 END) as yes_count,

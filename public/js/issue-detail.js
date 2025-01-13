@@ -58,6 +58,11 @@ import { renderCommentsByStance } from './commentRenderer.js';
         const authorName = document.querySelector('.author-name');
         if (authorName) authorName.textContent = issue.author_name || '不明な作成者';
 
+         // 概要
+        const issueSummary = document.querySelector('.issue-summary h4');
+        if (issueSummary) {
+            issueSummary.textContent = issue.description || '（概要は現在自動生成中です）';
+        }
         // トップページリンク
         const topLinkContainer = document.querySelector('.top-link');
         if (topLinkContainer) {

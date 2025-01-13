@@ -153,39 +153,77 @@ function submitStance() {
  * イシュー作成の処理
  */
 function createIssue() {
-    const headline = document.getElementById('headline').value.trim();
-    const description = document.getElementById('description').value.trim();
-    const tag = document.getElementById('tag').value;
+    const headlineInput = document.getElementById('headline');
+    const tagInput = document.getElementById('tag'); 
     const isFeaturedCheckbox = document.getElementById('isFeatured');
-    const isFeatured = isFeaturedCheckbox ? isFeaturedCheckbox.checked : false;
-    const errorDiv = document.getElementById('issue-error');
-    const successDiv = document.getElementById('issue-success');
 
-    // メッセージをクリア
-    errorDiv.textContent = '';
-    successDiv.textContent = '';
-
-    if (!headline || !description || !tag) {
-        errorDiv.textContent = 'すべてのフィールドを入力してください。';
+    if (!headlineInput || !tagInput) {
+        console.error('Required input fields are missing');
+        alert('必須の入力フィールドが見つかりませんでした。');
         return;
     }
 
+    const headline = headlineInput.value.trim();
+    const tagValue = tagInput.value.trim(); // 文字列の "8" など
+    if (!tagValue) {
+        alert('カテゴリを選択してください。');
+        return;
+    }
+
+    // カテゴリIDを整数に
+    const categoryId = parseInt(tagValue, 10);
+
+    // isFeatured
+    const isFeatured = isFeaturedCheckbox ? isFeaturedCheckbox.checked : false;
+
+    // description
+    const description = 'このイシューは自動生成された概要を持ちます。';
+
+    // デバッグ用ログ
+    console.log({
+        headline,
+        categoryId,  // ここにカテゴリIDを出力
+        is_featured: isFeatured,
+        description,
+    });
+
+    const errorDiv = document.getElementById('issue-error');
+    const successDiv = document.getElementById('issue-success');
+    if (errorDiv) errorDiv.textContent = '';
+    if (successDiv) successDiv.textContent = '';
+
+    // バリデーション
+    if (!headline || !categoryId) {
+        if (errorDiv) errorDiv.textContent = 'タイトルとカテゴリは必須です。';
+        return;
+    }
+
+    // サーバーへ送信するときも、キー名を category_id にする
     fetch('/api/issues', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ headline, description, tag, is_featured: isFeatured }),
-        credentials: 'same-origin' // セッション情報を含める
+        body: JSON.stringify({
+            headline,
+            category_id: categoryId, // keyをcategory_idに統一
+            is_featured: isFeatured,
+            description,
+        }),
+        credentials: 'same-origin',
     })
     .then(handleFetchResponse)
-    .then(data => {
-        successDiv.textContent = 'イシューが作成されました！';
-        document.getElementById('create-issue-form').reset();
-        // 必要に応じてイシュー一覧を再取得・更新
+    .then((data) => {
+        if (successDiv) successDiv.textContent = 'イシューが作成されました！';
+        const form = document.getElementById('create-issue-form');
+        if (form) {
+            form.reset();
+        }
         refreshIssues();
     })
-    .catch(err => {
+    .catch((err) => {
         console.error('Error creating issue:', err);
-        errorDiv.textContent = `イシューの作成に失敗しました: ${err.message}`;
+        if (errorDiv) {
+            errorDiv.textContent = `イシューの作成に失敗しました: ${err.message}`;
+        }
     });
 }
 
@@ -346,7 +384,7 @@ function initializeTagDropdown() {
                 dropdown.innerHTML = '<option value="">選択してください</option>'; // 初期値を設定
                 categories.forEach(category => {
                     const option = document.createElement('option');
-                    option.value = category.name; // バックエンドから送信されるnameを使用
+                    option.value = category.id; // IDを使用
                     option.textContent = category.name;
                     dropdown.appendChild(option);
                 });
