@@ -11,6 +11,7 @@ const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const helmet = require('helmet');
 const router = express.Router();
+const now = new Date().toISOString(); // 現在時刻をISOフォーマットで取得
 
 // =========================
 // 1. データベース初期化
@@ -697,6 +698,7 @@ app.get('/api/issues/:issue_id', (req, res) => {
 // YES/NO/様子見スタンス
 app.post('/api/stances', isAuthenticated, (req, res) => {
     const { issue_id, stance, comment } = req.body;
+    const userId = req.session.userId;
 
     // バリデーション
     if (!issue_id || !stance) {
@@ -706,7 +708,6 @@ app.post('/api/stances', isAuthenticated, (req, res) => {
     if (!validStances.includes(stance)) {
         return res.status(400).json({ error: 'Invalid stance' });
     }
-    const userId = req.session?.userId;
     if (!userId) {
         return res.status(401).json({ error: 'Unauthorized: User not logged in' });
     }
@@ -724,14 +725,13 @@ app.post('/api/stances', isAuthenticated, (req, res) => {
             return res.status(500).json({ error: 'Database error while checking stance' });
         }
 
-        console.log('Existing stance:', existingStance);
-
         if (existingStance) {
             // 既存のスタンスを更新
             const updateSql = `
                 UPDATE stances
                 SET stance = $stance,
-                    comment = $comment
+                    comment = $comment,
+                    created_at = datetime('now') -- タイムスタンプを更新
                 WHERE id = $id
             `;
             db.run(
@@ -744,10 +744,9 @@ app.post('/api/stances', isAuthenticated, (req, res) => {
                 function (err) {
                     if (err) {
                         console.error('Database update error:', err);
-                        return res.status(500).json({ error: 'Database update error' });
+                        return res.status(500).json({ error: 'Failed to update stance' });
                     }
-                    console.log('Stance updated successfully');
-                    res.status(200).json({ message: 'Stance updated successfully' });
+                    res.status(200).json({ message: 'Stance updated successfully', updated_at: new Date().toISOString() });
                 }
             );
         } else {
@@ -767,31 +766,45 @@ app.post('/api/stances', isAuthenticated, (req, res) => {
                 function (err) {
                     if (err) {
                         console.error('Database insert error:', err);
-                        return res.status(500).json({ error: 'Database insert error' });
+                        return res.status(500).json({ error: 'Failed to add stance' });
                     }
-                    console.log('Stance added successfully');
-                    res.status(201).json({ message: 'Stance added successfully' });
+                    res.status(201).json({ message: 'Stance added successfully', created_at: new Date().toISOString() });
                 }
             );
         }
     });
 });
 
-
-// いいね
-app.post('/api/issues/:id/like', (req, res) => {
+// コメント投稿
+app.post('/api/issues/:id/comment', isAuthenticated, (req, res) => {
     const issueId = req.params.id;
-    db.run(`UPDATE issues SET likes = likes + 1 WHERE id = ?`, [issueId], function (err) {
+    const { comment } = req.body;
+    const userId = req.session.userId;
+
+    if (!comment || comment.trim() === '') {
+        return res.status(400).json({ error: 'Comment is required' });
+    }
+
+    const sql = `
+        INSERT INTO comments (issue_id, user_id, comment, created_at)
+        VALUES (?, ?, ?, datetime('now'))
+    `;
+    db.run(sql, [issueId, userId, comment.trim()], function (err) {
         if (err) {
-            console.error('Database update error:', err);
-            return res.status(500).json({ error: 'Database update error' });
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Failed to add comment' });
         }
-        db.get(`SELECT likes FROM issues WHERE id = ?`, [issueId], (err, row) => {
+        const countSql = `
+            SELECT COUNT(*) as count
+            FROM comments
+            WHERE issue_id = ?
+        `;
+        db.get(countSql, [issueId], (err, row) => {
             if (err) {
-                console.error('Database fetch error:', err);
-                return res.status(500).json({ error: 'Database fetch error' });
+                console.error('Database error:', err);
+                return res.status(500).json({ error: 'Failed to count comments' });
             }
-            res.json({ likes: row.likes });
+            res.json({ message: 'Comment added successfully', comments: row.count });
         });
     });
 });
@@ -847,32 +860,6 @@ app.post('/api/issues/:id/favorite', isAuthenticated, (req, res) => {
     }
 });
 
-// コメント投稿
-app.post('/api/issues/:id/comment', isAuthenticated, (req, res) => {
-    const issueId = req.params.id;
-    const { comment } = req.body;
-    const userId = req.session.userId;
-
-    if (!comment || comment.trim() === '') {
-        return res.status(400).json({ error: 'Comment is required' });
-    }
-
-    const sql = `INSERT INTO comments (issue_id, user_id, comment) VALUES (?, ?, ?)`;
-    db.run(sql, [issueId, userId, comment.trim()], function (err) {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        const countSql = `SELECT COUNT(*) as count FROM comments WHERE issue_id = ?`;
-        db.get(countSql, [issueId], (err, row) => {
-            if (err) {
-                console.error('Database error:', err);
-                return res.status(500).json({ error: 'Database error' });
-            }
-            res.json({ comments: row.count });
-        });
-    });
-});
 
 // =========================
 // フィーチャー・イシュー一覧
