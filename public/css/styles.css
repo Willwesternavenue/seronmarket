@@ -156,7 +156,7 @@ a:hover {
 }
 .featured-issue-card{
     background-color: var(--color-white);
-    width: 300px;
+    width: 240px;
     box-sizing: border-box; /* 念のため指定 */
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius);
