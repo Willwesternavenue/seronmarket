@@ -325,7 +325,6 @@ function getIssuesBySearch(q) {
     });
 }
 
-
 // カテゴリ一覧を取得
 app.get('/api/categories', (req, res) => {
     const sql = 'SELECT id, name FROM categories';
@@ -568,14 +567,20 @@ app.delete('/api/issues/:id', isAuthenticated, isAdmin, (req, res) => {
 // Search
 app.get('/api/issues/search', async (req, res) => {
     try {
-      const q = req.query.q || '';
-      // ここでDBなどからタイトルや本文などが q に部分一致するイシューを取得
-      // 例: SELECT * FROM issues WHERE headline LIKE '%q%'
-      const matchingIssues = await getIssuesBySearch(q);
-      res.json(matchingIssues);
+        let q = req.query.query || '';
+        q = q.trim();
+        if (!q) {
+            return res.status(400).json({ error: '検索クエリが空です。' });
+        }
+
+        const matchingIssues = q
+            ? await getIssuesBySearch(q)
+            : await getIssuesBySearch(''); // 空文字列の場合は全件取得
+
+        res.json(matchingIssues);
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: '検索に失敗しました' });
+        console.error('Search error:', err);
+        res.status(500).json({ error: '検索に失敗しました' });
     }
   });
   
