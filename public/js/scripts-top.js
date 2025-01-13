@@ -143,17 +143,17 @@ function createOtherIssueCard(issue) {
                 <span>NO ${noPercent}%</span>
             </div>
             <div class="action-buttons">
-                <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
-                    <i class="fas fa-hand-paper icon"></i> ${issue.stance_count || 0}
-                </button>
                 <button class="like-button" data-issue-id="${issue.id}" tabindex="0" aria-label="いいね ボタン">
-                    <i class="fas fa-heart icon"></i> ${issue.likes || 0}
+                    <i class="fas fa-fire icon"></i> ${issue.likes || 0}
                 </button>
-                <button class="favorite-button" data-issue-id="${issue.id}" tabindex="0" aria-label="お気に入り ボタン">
-                    <i class="fas fa-star icon"></i> ${favoritesCount}
+                <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
+                    <i class="fas fa-balance-scale icon"></i> ${issue.stance_count || 0}
                 </button>
                 <button class="comment-button" data-issue-id="${issue.id}" tabindex="0" aria-label="コメント ボタン">
                     <i class="fas fa-comment icon"></i> ${issue.comments_count || 0}
+                </button>
+                <button class="comment-button" data-issue-id="${issue.id}" tabindex="0" aria-label="コメント ボタン">
+                    <i class="fas fa-bullhorn icon"></i> ${issue.comments_count || 0}
                 </button>
             </div>
         </div>

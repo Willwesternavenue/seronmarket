@@ -460,15 +460,15 @@ app.get('/logout', (req, res) => {
     });
 });
 
-
 // イシュー作成
 app.post('/api/issues', (req, res) => {
-    const { headline, description, tag, is_featured } = req.body;
-
-    if (!headline || !description || !tag) {
-        return res.status(400).json({ error: 'タイトルとカテゴリは必須です。' });
+    const { headline, category_id, is_featured } = req.body;
+    const placeholderDescription = 'このイシューの概要は自動生成中です';
+    
+    if (!headline || !category_id) {
+        return res.status(400).json({ error: 'タイトルとカテゴリは必須です' });
     }
-
+    
     const checkSql = `SELECT id FROM issues WHERE headline = ?`;
     db.get(checkSql, [headline], (err, row) => {
         if (err) {
@@ -477,23 +477,27 @@ app.post('/api/issues', (req, res) => {
         }
 
         if (row) {
-            return res.status(400).json({ error: '同じヘッドラインのイシューが既に存在します。' });
+            return res.status(400).json({ error: '同じヘッドラインのイシューが既に存在します' });
         }
-        const finalDescription = description && description.trim() !== '' ? description.trim() : 'このイシューの概要は自動生成されます。';
-
+        // 3) description はいまは入れずに、後でAI生成
+        // const finalDescription = 'このイシューの概要は自動生成されます。';
+        
         const insertSql = `
             INSERT INTO issues (headline, description, category_id, is_featured)
-            VALUES (?, ?, (SELECT id FROM categories WHERE name = ?), ?)
+            VALUES (?, ?, ?, ?);
         `;
 
-db.run(insertSql, [headline, description, parseInt(tag,10), is_featured ? 1 : 0], function (err) {
-    if (err) {
-        console.error('Database insert error:', err);
-        return res.status(500).json({ error: 'イシューの作成に失敗しました。' });
-    }
-    res.status(201).json({ id: this.lastID, message: 'イシューが正常に作成されました。' });
-});
-
+        db.run(
+            insertSql, 
+            [headline, placeholderDescription, category_id, is_featured ? 1 : 0], 
+            function (err) {
+                if (err) {
+                    console.error('DB insert error:', err);
+                    return res.status(500).json({ error: 'イシューの作成に失敗しました。' });
+                }
+            res.status(201).json({ id: this.lastID, message: 'イシューが正常に作成されました。' });
+            }
+        );
     });
 });
 
