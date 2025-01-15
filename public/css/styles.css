@@ -137,7 +137,7 @@ a:hover {
 }
 
 .section h3 {
-    margin-bottom: 15px;
+    text-align: center;
     color: var(--color-dark-blue);
     font-size: 20px;
 }
@@ -320,7 +320,7 @@ max-height: calc(1.4em * 2);       /* 2行分の高さ (行数に合わせて計
 
 .other-issue-card h4.issue-title {
     color: var(--color-primary);
-    font-size: 0.95em; /* フォントサイズを縮小 */
+    font-size: 0.9em; /* フォントサイズを縮小 */
     margin-bottom: 6px; /* マージンを縮小 */
     white-space: normal;       /* 通常の折り返しを有効化 */
     overflow-wrap: break-word; /* 単語途中でも折り返し可能に */
@@ -394,7 +394,7 @@ max-height: calc(1.4em * 2);       /* 2行分の高さ (行数に合わせて計
     border-radius: var(--border-radius);
     cursor: pointer;
     transition: background-color var(--transition-speed), color var(--transition-speed);
-    font-size: 0.75em; /* フォントサイズを縮小 */
+    font-size: 0.7em; /* フォントサイズを縮小 */
 }
 
 .action-buttons button:hover {

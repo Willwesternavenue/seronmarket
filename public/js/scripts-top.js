@@ -138,10 +138,12 @@ function createOtherIssueCard(issue) {
                 <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>
                 <div class="vote-bar-no" style="width: ${noPercent}%;"></div>
             </div>
+            <!--
             <div class="vote-counts">
                 <span>YES ${yesPercent}%</span>
                 <span>NO ${noPercent}%</span>
             </div>
+            -->
             <div class="action-buttons">
                 <button class="like-button" data-issue-id="${issue.id}" tabindex="0" aria-label="いいね ボタン">
                     <i class="fas fa-fire icon"></i> ${issue.likes || 0}
