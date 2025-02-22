@@ -1,5 +1,3 @@
-// server.js
-
 require('dotenv').config(); // 環境変数の読み込み
 
 const express = require('express');
@@ -7,22 +5,27 @@ const path = require('path');
 const app = express();
 const session = require('express-session');
 const bcrypt = require('bcrypt');
-const sqlite3 = require('sqlite3').verbose();
+// PostgreSQL用のライブラリ
+const { Pool } = require('pg');
 const cors = require('cors');
 const helmet = require('helmet');
 const router = express.Router();
 const now = new Date().toISOString(); // 現在時刻をISOフォーマットで取得
 
 // =========================
-// 1. データベース初期化
+// 1. データベース初期化 (Supabase PostgreSQL)
 // =========================
-const dbPath = path.join(__dirname, 'db', 'database.sqlite');
-const db = new sqlite3.Database(dbPath, (err) => {
+const pool = new Pool({
+    connectionString: process.env.SUPABASE_DATABASE_URL, // Supabaseの接続文字列
+});
+
+pool.connect((err, client, release) => {
     if (err) {
-        console.error('Could not connect to database', err);
+        console.error('Supabase PostgreSQLへの接続に失敗しました:', err);
         process.exit(1); // データベース接続エラーでプロセスを終了
     } else {
-        console.log('Connected to SQLite database');
+        console.log('Supabase PostgreSQLに接続しました');
+        release();
     }
 });
 
@@ -103,17 +106,17 @@ if (process.env.NODE_ENV !== 'production') {
 // =========================
 function isAuthenticated(req, res, next) {
     if (req.session && req.session.userId) {
-        // データベースからユーザー情報を取得して req.user に設定
-        const sql = 'SELECT id, username, is_Admin FROM users WHERE id = ?';
-        db.get(sql, [req.session.userId], (err, user) => {
+        const sql = 'SELECT id, username, is_Admin FROM users WHERE id = $1';
+        pool.query(sql, [req.session.userId], (err, result) => {
             if (err) {
                 console.error('Database error:', err);
                 return res.status(500).json({ error: 'Internal server error' });
             }
+            const user = result.rows[0];
             if (!user) {
                 return res.status(401).json({ error: 'Unauthorized' });
             }
-            req.user = user; // `req.user` にユーザー情報を設定
+            req.user = user; // ユーザー情報を設定
             next();
         });
     } else {
@@ -127,26 +130,27 @@ function isAdmin(req, res, next) {
     }
     return res.status(403).json({ error: 'Forbidden: Admins only' });
 }
+
 // =========================
 // 5. テーブル作成
 // =========================
 const tableDefinitions = [
     // Users
     `CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         is_admin INTEGER DEFAULT 0
     )`,
     // Categories
     `CREATE TABLE IF NOT EXISTS categories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         name TEXT NOT NULL UNIQUE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     // Issues
     `CREATE TABLE IF NOT EXISTS issues (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         headline TEXT NOT NULL,
         description TEXT NOT NULL,
         tag TEXT,
@@ -160,45 +164,45 @@ const tableDefinitions = [
     )`,
     // Stances
     `CREATE TABLE IF NOT EXISTS stances (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         issue_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
         stance TEXT NOT NULL,
         comment TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (issue_id) REFERENCES issues(id),
         FOREIGN KEY (user_id) REFERENCES users(id),
         UNIQUE (user_id, issue_id)
     )`,
     // Favorites
     `CREATE TABLE IF NOT EXISTS favorites (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL,
         issue_id INTEGER NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id, issue_id),
         FOREIGN KEY (user_id) REFERENCES users(id),
         FOREIGN KEY (issue_id) REFERENCES issues(id)
     )`,
     // Comments
     `CREATE TABLE IF NOT EXISTS comments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         issue_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
         comment TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (issue_id) REFERENCES issues(id),
         FOREIGN KEY (user_id) REFERENCES users(id)
     )`
 ];
 
-for (const sql of tableDefinitions) {
-    db.run(sql, (err) => {
+tableDefinitions.forEach((sql) => {
+    pool.query(sql, (err) => {
         if (err) {
             console.error('Error creating table:', err);
         }
     });
-}
+});
 
 // =========================
 // 6. 初期データ投入
@@ -210,7 +214,8 @@ const initialCategories = [
 ];
 
 initialCategories.forEach((name) => {
-    db.run(`INSERT OR IGNORE INTO categories (name) VALUES (?)`, [name], (err) => {
+    const sql = `INSERT INTO categories (name) VALUES ($1) ON CONFLICT (name) DO NOTHING`;
+    pool.query(sql, [name], (err) => {
         if (err) {
             console.error('Error inserting initial categories:', err);
         }
@@ -237,6 +242,7 @@ app.get('/mypage', isAuthenticated, (req, res) => {
 app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
+
 // ログインユーザー情報取得
 app.get('/api/user', isAuthenticated, (req, res) => {
     if (!req.user) {
@@ -254,12 +260,10 @@ app.get('/debug-session', (req, res) => {
     res.json(req.session);
 });
 
-
 // --- APIエンドポイント ---
 // カテゴリ別のイシューを取得
 app.get('/api/issues', (req, res) => {
-    const categoryId = req.query.category_id; // クエリパラメータからカテゴリIDを取得
-
+    const categoryId = req.query.category_id;
     let sql = `
         SELECT 
             issues.id, 
@@ -274,19 +278,16 @@ app.get('/api/issues', (req, res) => {
         LEFT JOIN users ON issues.created_by = users.id
     `;
     const params = [];
-
-    // カテゴリIDが指定されている場合にフィルタリング
     if (categoryId) {
-        sql += ' WHERE issues.category_id = ?';
+        sql += ' WHERE issues.category_id = $1';
         params.push(categoryId);
     }
-
-    db.all(sql, params, (err, rows) => {
+    pool.query(sql, params, (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'Failed to fetch issues' });
         }
-        res.json(rows);
+        res.json(result.rows);
     });
 });
 
@@ -297,7 +298,6 @@ app.get('/api/issues', (req, res) => {
  */
 function getIssuesBySearch(q) {
     return new Promise((resolve, reject) => {
-        // 例: headline や description から部分一致検索する
         const sql = `
             SELECT 
                 issues.id,
@@ -311,17 +311,16 @@ function getIssuesBySearch(q) {
             FROM issues
             LEFT JOIN categories ON issues.category_id = categories.id
             LEFT JOIN users ON issues.created_by = users.id
-            WHERE issues.headline LIKE ?
-               OR issues.description LIKE ?
+            WHERE issues.headline LIKE $1
+               OR issues.description LIKE $2
             ORDER BY issues.id DESC
         `;
         const likeQuery = `%${q}%`;
-
-        db.all(sql, [likeQuery, likeQuery], (err, rows) => {
+        pool.query(sql, [likeQuery, likeQuery], (err, result) => {
             if (err) {
                 return reject(err);
             }
-            resolve(rows);
+            resolve(result.rows);
         });
     });
 }
@@ -329,19 +328,18 @@ function getIssuesBySearch(q) {
 // カテゴリ一覧を取得
 app.get('/api/categories', (req, res) => {
     const sql = 'SELECT id, name FROM categories';
-
-    db.all(sql, [], (err, rows) => {
+    pool.query(sql, [], (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'Failed to fetch categories' });
         }
-        res.json(rows);
+        res.json(result.rows);
     });
 });
+
 // コメントを取得
 app.get('/api/issues/:issue_id/comments', (req, res) => {
     const issueId = req.params.issue_id;
-
     const sql = `
         SELECT
             stances.stance,
@@ -350,37 +348,35 @@ app.get('/api/issues/:issue_id/comments', (req, res) => {
             users.username
         FROM stances
         LEFT JOIN users ON stances.user_id = users.id
-        WHERE stances.issue_id = ?
+        WHERE stances.issue_id = $1
             AND stances.comment IS NOT NULL
             AND TRIM(stances.comment) != ''
         ORDER BY stances.created_at DESC
         LIMIT 1;
     `;
- 
-    db.all(sql, [issueId], (err, rows) => {
+    pool.query(sql, [issueId], (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'Failed to fetch comments' });
         }
-        res.json(rows);
+        res.json(result.rows);
     });
 });
 
 // --- 認証系エンドポイント ---
-
 // 新規ユーザー登録
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({ error: 'Username and password are required' });
     }
-
-    db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
+    const checkSql = 'SELECT * FROM users WHERE username = $1';
+    pool.query(checkSql, [username], (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'Database error' });
         }
-        if (user) {
+        if (result.rows.length > 0) {
             return res.status(400).json({ error: 'Username already exists' });
         }
         bcrypt.hash(password, 10, (err, hash) => {
@@ -388,66 +384,58 @@ app.post('/register', (req, res) => {
                 console.error('Bcrypt error:', err);
                 return res.status(500).json({ error: 'Error hashing password' });
             }
-            db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash], function (err) {
+            const insertSql = 'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id';
+            pool.query(insertSql, [username, hash], (err, result) => {
                 if (err) {
                     console.error('Database error:', err);
                     return res.status(500).json({ error: 'Database error' });
                 }
-                // 新規ユーザー登録後、セッションを開始
-                req.session.userId = this.lastID;
+                req.session.userId = result.rows[0].id;
                 req.session.username = username;
-                req.session.isAdmin = false; // 初期値は非管理者
+                req.session.isAdmin = false;
                 res.redirect('/mypage');
             });
         });
     });
 });
 
+// ログイン
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
-
-    db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
+    const sql = 'SELECT * FROM users WHERE username = $1';
+    pool.query(sql, [username], (err, result) => {
         if (err) {
             console.error('An error occurred during login.');
             return res.status(500).json({ error: 'An internal error occurred.' });
         }
-
-        if (!user) {
+        if (result.rows.length === 0) {
             return res.status(400).json({ error: 'Invalid username or password' });
         }
-
-        bcrypt.compare(password, user.password, (err, result) => {
+        const user = result.rows[0];
+        bcrypt.compare(password, user.password, (err, compareResult) => {
             if (err) {
                 console.error('An error occurred during password comparison.');
                 return res.status(500).json({ error: 'Authentication error' });
             }
-
-            if (!result) {
+            if (!compareResult) {
                 return res.status(400).json({ error: 'Invalid username or password' });
             }
-
             req.session.regenerate((err) => {
                 if (err) {
                     console.error('Session regeneration error:', err);
                     return res.status(500).json({ error: 'Session error' });
                 }
-
                 req.session.userId = user.id;
                 req.session.username = user.username;
                 req.session.isAdmin = user.is_admin === 1;
-
-                // 管理者リダイレクト
                 if (user.is_admin === 1) {
                     return res.redirect('/admin');
                 }
-
-                // 通常ユーザーリダイレクト
                 return res.redirect('/mypage');
             });
         });
     });
 });
-
 
 // ログアウト
 app.get('/logout', (req, res) => {
@@ -464,101 +452,73 @@ app.get('/logout', (req, res) => {
 app.post('/api/issues', (req, res) => {
     const { headline, category_id, is_featured } = req.body;
     const placeholderDescription = 'このイシューの概要は自動生成中です';
-    
     if (!headline || !category_id) {
         return res.status(400).json({ error: 'タイトルとカテゴリは必須です' });
     }
-    
-    const checkSql = `SELECT id FROM issues WHERE headline = ?`;
-    db.get(checkSql, [headline], (err, row) => {
+    const checkSql = `SELECT id FROM issues WHERE headline = $1`;
+    pool.query(checkSql, [headline], (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'データベースエラー' });
         }
-
-        if (row) {
+        if (result.rows.length > 0) {
             return res.status(400).json({ error: '同じヘッドラインのイシューが既に存在します' });
         }
-        // 3) description はいまは入れずに、後でAI生成
-        // const finalDescription = 'このイシューの概要は自動生成されます。';
-        
         const insertSql = `
             INSERT INTO issues (headline, description, category_id, is_featured)
-            VALUES (?, ?, ?, ?);
+            VALUES ($1, $2, $3, $4)
+            RETURNING id;
         `;
-
-        db.run(
-            insertSql, 
-            [headline, placeholderDescription, category_id, is_featured ? 1 : 0], 
-            function (err) {
-                if (err) {
-                    console.error('DB insert error:', err);
-                    return res.status(500).json({ error: 'イシューの作成に失敗しました。' });
-                }
-            res.status(201).json({ id: this.lastID, message: 'イシューが正常に作成されました。' });
+        pool.query(insertSql, [headline, placeholderDescription, category_id, is_featured ? 1 : 0], (err, result) => {
+            if (err) {
+                console.error('DB insert error:', err);
+                return res.status(500).json({ error: 'イシューの作成に失敗しました。' });
             }
-        );
+            res.status(201).json({ id: result.rows[0].id, message: 'イシューが正常に作成されました。' });
+        });
     });
 });
 
-// イシュー更新 (管理者)
-app.put('/api/issues/:id', isAuthenticated, isAdmin, (req, res) => {
+// イシュー更新 (管理者) - トランザクションを使用
+app.put('/api/issues/:id', isAuthenticated, isAdmin, async (req, res) => {
     const { issue_id, stance, comment } = req.body;
-    const user_id = req.session.user_id;
-
-    // トランザクションで複数の操作を実行
-    db.serialize(() => {
-        db.run('BEGIN TRANSACTION');
-
-        // 1. スタンスを stances テーブルに追加
+    const user_id = req.session.userId;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
         const sqlStance = `
             INSERT INTO stances (issue_id, stance, comment, user_id)
-            VALUES (?, ?, ?, ?);
+            VALUES ($1, $2, $3, $4)
         `;
-        db.run(sqlStance, [issue_id, stance, comment, user_id], function (err) {
-            if (err) {
-                console.error('Error inserting stance:', err);
-                db.run('ROLLBACK');
-                return res.status(500).json({ error: 'Failed to submit stance' });
-            }
-        });
-
-        // 2. コメントを comments テーブルに追加（空コメントの場合はスキップ）
+        await client.query(sqlStance, [issue_id, stance, comment, user_id]);
         if (comment) {
             const sqlComment = `
                 INSERT INTO comments (issue_id, comment, user_id, created_at)
-                VALUES (?, ?, ?, datetime('now'));
+                VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
             `;
-            db.run(sqlComment, [issue_id, comment, user_id], function (err) {
-                if (err) {
-                    console.error('Error inserting comment:', err);
-                    db.run('ROLLBACK');
-                    return res.status(500).json({ error: 'Failed to submit comment' });
-                }
-            });
+            await client.query(sqlComment, [issue_id, comment, user_id]);
         }
-
-        // トランザクションをコミット
-        db.run('COMMIT', (err) => {
-            if (err) {
-                console.error('Error committing transaction:', err);
-                db.run('ROLLBACK');
-                return res.status(500).json({ error: 'Failed to complete transaction' });
-            }
-            res.json({ success: true });
-        });
-    });
+        await client.query('COMMIT');
+        res.json({ success: true });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error in transaction:', err);
+        res.status(500).json({ error: 'Failed to complete transaction' });
+    } finally {
+        client.release();
+    }
 });
 
-// イシュー削除 (必要なら)
+// イシュー削除
 app.delete('/api/issues/:id', isAuthenticated, isAdmin, (req, res) => {
     const issueId = req.params.id;
-    db.run(`DELETE FROM issues WHERE id = ?`, [issueId], function (err) {
+    const sql = `DELETE FROM issues WHERE id = $1`;
+    pool.query(sql, [issueId], (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'Database error' });
         }
-        if (this.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Issue not found' });
         }
         res.json({ message: 'Issue deleted successfully' });
@@ -573,25 +533,17 @@ app.get('/api/issues/search', async (req, res) => {
         if (!q) {
             return res.status(400).json({ error: '検索クエリが空です。' });
         }
-
-        const matchingIssues = q
-            ? await getIssuesBySearch(q)
-            : await getIssuesBySearch(''); // 空文字列の場合は全件取得
-
+        const matchingIssues = await getIssuesBySearch(q);
         res.json(matchingIssues);
     } catch (err) {
         console.error('Search error:', err);
         res.status(500).json({ error: '検索に失敗しました' });
     }
-  });
+});
   
-// --- イシュー関連エンドポイント ---
-
 // API: /api/issues/:issue_id
 app.get('/api/issues/:issue_id', (req, res) => {
     const issueId = req.params.issue_id;
-
-    // イシュー情報を取得するクエリ
     const sqlIssue = `
         SELECT
             issues.id,
@@ -602,59 +554,18 @@ app.get('/api/issues/:issue_id', (req, res) => {
             issues.is_featured,
             categories.name AS category_name,
             users.username AS author_name,
-
-            -- スタンス数をカウント
-            (
-                SELECT COUNT(*)
-                FROM stances
-                WHERE stances.issue_id = issues.id
-            ) as stance_count,
-
-            -- お気に入り数をカウント
-            (
-                SELECT COUNT(*)
-                FROM favorites
-                WHERE favorites.issue_id = issues.id
-            ) as favorite_count,
-
-            -- コメント数をカウント
-            (
-                SELECT COUNT(*)
-                FROM comments
-                WHERE comments.issue_id = issues.id
-            ) as comments_count,
-
-            -- YES の数をカウント
-            (
-                SELECT COUNT(*)
-                FROM stances
-                WHERE stances.issue_id = issues.id
-                AND stances.stance = 'YES'
-            ) as yes_count,
-
-            -- NO の数をカウント
-            (
-                SELECT COUNT(*)
-                FROM stances
-                WHERE stances.issue_id = issues.id
-                AND stances.stance = 'NO'
-            ) as no_count,
-
-            -- 様子見 (Maybe) の数をカウント
-            (
-                SELECT COUNT(*)
-                FROM stances
-                WHERE stances.issue_id = issues.id
-                AND stances.stance = '様子見'
-            ) as maybe_count
+            (SELECT COUNT(*) FROM stances WHERE stances.issue_id = issues.id) as stance_count,
+            (SELECT COUNT(*) FROM favorites WHERE favorites.issue_id = issues.id) as favorite_count,
+            (SELECT COUNT(*) FROM comments WHERE comments.issue_id = issues.id) as comments_count,
+            (SELECT COUNT(*) FROM stances WHERE stances.issue_id = issues.id AND stances.stance = 'YES') as yes_count,
+            (SELECT COUNT(*) FROM stances WHERE stances.issue_id = issues.id AND stances.stance = 'NO') as no_count,
+            (SELECT COUNT(*) FROM stances WHERE stances.issue_id = issues.id AND stances.stance = '様子見') as maybe_count
         FROM issues
         LEFT JOIN categories ON issues.category_id = categories.id
         LEFT JOIN users ON issues.created_by = users.id
-        WHERE issues.id = ?
+        WHERE issues.id = $1
         GROUP BY issues.id, categories.name, users.username;
     `;
-
-    // コメント情報を取得するクエリ
     const sqlComments = `
         SELECT
             stances.stance,
@@ -663,33 +574,27 @@ app.get('/api/issues/:issue_id', (req, res) => {
             users.username
         FROM stances
         LEFT JOIN users ON stances.user_id = users.id
-        WHERE stances.issue_id = ?
+        WHERE stances.issue_id = $1
         ORDER BY stances.created_at DESC
         LIMIT 3;
     `;
-
-    // 1. イシュー情報を取得
-    db.get(sqlIssue, [issueId], (err, issueRow) => {
+    pool.query(sqlIssue, [issueId], (err, result) => {
         if (err) {
             console.error('Database error while fetching issue:', err);
             return res.status(500).json({ error: 'Failed to fetch issue details.' });
         }
-
+        const issueRow = result.rows[0];
         if (!issueRow) {
             return res.status(404).json({ error: 'Issue not found.' });
         }
-
-        // 2. コメント情報を取得
-        db.all(sqlComments, [issueId], (err, commentRows) => {
+        pool.query(sqlComments, [issueId], (err, result2) => {
             if (err) {
                 console.error('Database error while fetching comments:', err);
                 return res.status(500).json({ error: 'Failed to fetch comments.' });
             }
-
-            // 3. 結果をクライアントに送信
             res.json({
-                issue: issueRow,       // イシュー詳細情報 (YES/NO/Maybe 含む)
-                comments: commentRows  // 最新3件のコメント
+                issue: issueRow,
+                comments: result2.rows
             });
         });
     });
@@ -699,8 +604,6 @@ app.get('/api/issues/:issue_id', (req, res) => {
 app.post('/api/stances', isAuthenticated, (req, res) => {
     const { issue_id, stance, comment } = req.body;
     const userId = req.session.userId;
-
-    // バリデーション
     if (!issue_id || !stance) {
         return res.status(400).json({ error: 'Issue ID and stance are required' });
     }
@@ -711,66 +614,44 @@ app.post('/api/stances', isAuthenticated, (req, res) => {
     if (!userId) {
         return res.status(401).json({ error: 'Unauthorized: User not logged in' });
     }
-
-    // すでに同じ (issue_id, user_id) があるかチェック
     const checkSql = `
         SELECT *
         FROM stances
-        WHERE issue_id = $issueId
-          AND user_id = $userId
+        WHERE issue_id = $1 AND user_id = $2
     `;
-    db.get(checkSql, { $issueId: issue_id, $userId: userId }, (err, existingStance) => {
+    pool.query(checkSql, [issue_id, userId], (err, result) => {
         if (err) {
             console.error('Database error while checking stance:', err);
             return res.status(500).json({ error: 'Database error while checking stance' });
         }
-
-        if (existingStance) {
-            // 既存のスタンスを更新
+        if (result.rows.length > 0) {
             const updateSql = `
                 UPDATE stances
-                SET stance = $stance,
-                    comment = $comment,
-                    created_at = datetime('now') -- タイムスタンプを更新
-                WHERE id = $id
+                SET stance = $1,
+                    comment = $2,
+                    created_at = CURRENT_TIMESTAMP
+                WHERE id = $3
             `;
-            db.run(
-                updateSql,
-                {
-                    $stance: stance,
-                    $comment: comment || null,
-                    $id: existingStance.id
-                },
-                function (err) {
-                    if (err) {
-                        console.error('Database update error:', err);
-                        return res.status(500).json({ error: 'Failed to update stance' });
-                    }
-                    res.status(200).json({ message: 'Stance updated successfully', updated_at: new Date().toISOString() });
+            pool.query(updateSql, [stance, comment || null, result.rows[0].id], (err) => {
+                if (err) {
+                    console.error('Database update error:', err);
+                    return res.status(500).json({ error: 'Failed to update stance' });
                 }
-            );
+                res.status(200).json({ message: 'Stance updated successfully', updated_at: new Date().toISOString() });
+            });
         } else {
-            // 新規スタンスを挿入
             const insertSql = `
                 INSERT INTO stances (issue_id, user_id, stance, comment, created_at)
-                VALUES ($issueId, $userId, $stance, $comment, datetime('now'))
+                VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+                RETURNING id
             `;
-            db.run(
-                insertSql,
-                {
-                    $issueId: issue_id,
-                    $userId: userId,
-                    $stance: stance,
-                    $comment: comment || null
-                },
-                function (err) {
-                    if (err) {
-                        console.error('Database insert error:', err);
-                        return res.status(500).json({ error: 'Failed to add stance' });
-                    }
-                    res.status(201).json({ message: 'Stance added successfully', created_at: new Date().toISOString() });
+            pool.query(insertSql, [issue_id, userId, stance, comment || null], (err) => {
+                if (err) {
+                    console.error('Database insert error:', err);
+                    return res.status(500).json({ error: 'Failed to add stance' });
                 }
-            );
+                res.status(201).json({ message: 'Stance added successfully', created_at: new Date().toISOString() });
+            });
         }
     });
 });
@@ -780,16 +661,15 @@ app.post('/api/issues/:id/comment', isAuthenticated, (req, res) => {
     const issueId = req.params.id;
     const { comment } = req.body;
     const userId = req.session.userId;
-
     if (!comment || comment.trim() === '') {
         return res.status(400).json({ error: 'Comment is required' });
     }
-
     const sql = `
         INSERT INTO comments (issue_id, user_id, comment, created_at)
-        VALUES (?, ?, ?, datetime('now'))
+        VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+        RETURNING id
     `;
-    db.run(sql, [issueId, userId, comment.trim()], function (err) {
+    pool.query(sql, [issueId, userId, comment.trim()], (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'Failed to add comment' });
@@ -797,14 +677,14 @@ app.post('/api/issues/:id/comment', isAuthenticated, (req, res) => {
         const countSql = `
             SELECT COUNT(*) as count
             FROM comments
-            WHERE issue_id = ?
+            WHERE issue_id = $1
         `;
-        db.get(countSql, [issueId], (err, row) => {
+        pool.query(countSql, [issueId], (err, result2) => {
             if (err) {
                 console.error('Database error:', err);
                 return res.status(500).json({ error: 'Failed to count comments' });
             }
-            res.json({ message: 'Comment added successfully', comments: row.count });
+            res.json({ message: 'Comment added successfully', comments: result2.rows[0].count });
         });
     });
 });
@@ -814,60 +694,57 @@ app.post('/api/issues/:id/favorite', isAuthenticated, (req, res) => {
     const issueId = req.params.id;
     const { action } = req.body;
     const userId = req.session.userId;
-
     if (!['add', 'remove'].includes(action)) {
         return res.status(400).json({ error: 'Invalid action' });
     }
-
     if (action === 'add') {
-        const sql = `INSERT INTO favorites (user_id, issue_id) VALUES (?, ?)`;
-        db.run(sql, [userId, issueId], function (err) {
+        const sql = `INSERT INTO favorites (user_id, issue_id) VALUES ($1, $2) RETURNING id`;
+        pool.query(sql, [userId, issueId], (err, result) => {
             if (err) {
-                if (err.code === 'SQLITE_CONSTRAINT') {
+                // PostgreSQLのユニーク制約違反はエラーコード 23505
+                if (err.code === '23505') {
                     return res.status(400).json({ error: 'Issue already favorited' });
                 }
                 console.error('Database error:', err);
                 return res.status(500).json({ error: 'Database error' });
             }
-            const countSql = `SELECT COUNT(*) as count FROM favorites WHERE issue_id = ?`;
-            db.get(countSql, [issueId], (err, row) => {
+            const countSql = `SELECT COUNT(*) as count FROM favorites WHERE issue_id = $1`;
+            pool.query(countSql, [issueId], (err, result2) => {
                 if (err) {
                     console.error('Database error:', err);
                     return res.status(500).json({ error: 'Database error' });
                 }
-                res.json({ favorites: row.count });
+                res.json({ favorites: result2.rows[0].count });
             });
         });
     } else if (action === 'remove') {
-        const sql = `DELETE FROM favorites WHERE user_id = ? AND issue_id = ?`;
-        db.run(sql, [userId, issueId], function (err) {
+        const sql = `DELETE FROM favorites WHERE user_id = $1 AND issue_id = $2`;
+        pool.query(sql, [userId, issueId], (err, result) => {
             if (err) {
                 console.error('Database error:', err);
                 return res.status(500).json({ error: 'Database error' });
             }
-            if (this.changes === 0) {
+            if (result.rowCount === 0) {
                 return res.status(400).json({ error: 'Favorite not found' });
             }
-            const countSql = `SELECT COUNT(*) as count FROM favorites WHERE issue_id = ?`;
-            db.get(countSql, [issueId], (err, row) => {
+            const countSql = `SELECT COUNT(*) as count FROM favorites WHERE issue_id = $1`;
+            pool.query(countSql, [issueId], (err, result2) => {
                 if (err) {
                     console.error('Database error:', err);
                     return res.status(500).json({ error: 'Database error' });
                 }
-                res.json({ favorites: row.count });
+                res.json({ favorites: result2.rows[0].count });
             });
         });
     }
 });
 
-
 // =========================
 // フィーチャー・イシュー一覧
 // =========================
 app.get('/api/featured_issues', (req, res) => {
-    const categoryId = req.query.category_id; // 例: /api/featured_issues?category_id=2
+    const categoryId = req.query.category_id;
     const params = [];
-
     let sql = `
         SELECT 
             issues.id,
@@ -892,14 +769,10 @@ app.get('/api/featured_issues', (req, res) => {
         LEFT JOIN users ON issues.created_by = users.id
         WHERE issues.is_featured = 1
     `;
-
-    // カテゴリ指定があれば追加
     if (categoryId) {
-        sql += ' AND issues.category_id = ?';
+        sql += ' AND issues.category_id = $1';
         params.push(categoryId);
     }
-
-    // GROUP BY (集計)
     sql += `
         GROUP BY 
             issues.id, 
@@ -910,26 +783,23 @@ app.get('/api/featured_issues', (req, res) => {
             users.username, 
             issues.likes
     `;
-
-    db.all(sql, params, (err, issues) => {
+    pool.query(sql, params, (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'Failed to fetch featured issues.' });
         }
-
+        const issues = result.rows;
         const mapped = issues.map(issue => {
             const yesCount = issue.yes_count || 0;
             const noCount = issue.no_count || 0;
             const maybeCount = issue.maybe_count || 0;
             const totalVotes = yesCount + noCount + maybeCount;
-
             let yesPercent = 0, noPercent = 0, maybePercent = 0;
             if (totalVotes > 0) {
                 yesPercent = (yesCount / totalVotes) * 100;
                 noPercent = (noCount / totalVotes) * 100;
                 maybePercent = (maybeCount / totalVotes) * 100;
             }
-
             return {
                 ...issue,
                 yes_percent: yesPercent.toFixed(1),
@@ -939,7 +809,6 @@ app.get('/api/featured_issues', (req, res) => {
                 comments_count: issue.comments_count || 0
             };
         });
-
         res.json(mapped);
     });
 });
@@ -950,7 +819,6 @@ app.get('/api/featured_issues', (req, res) => {
 app.get('/api/issues_with_votes', (req, res) => {
     const categoryId = req.query.category_id;
     const params = [];
-
     let sql = `
         SELECT
             issues.id,
@@ -975,22 +843,26 @@ app.get('/api/issues_with_votes', (req, res) => {
         LEFT JOIN users ON issues.created_by = users.id
         WHERE issues.is_featured = 0
     `;
-
     if (categoryId) {
-        sql += ' AND issues.category_id = ?';
+        sql += ' AND issues.category_id = $1';
         params.push(categoryId);
     }
-
     sql += `
         GROUP BY 
-            issues.id, users.username
+            issues.id, 
+            issues.headline, 
+            issues.description, 
+            issues.category_id, 
+            categories.name, 
+            users.username, 
+            issues.likes
     `;
-
-    db.all(sql, params, (err, rows) => {
+    pool.query(sql, params, (err, result) => {
         if (err) {
             console.error('Error fetching issues with votes:', err);
             return res.status(500).json({ error: 'Failed to fetch issues with votes' });
         }
+        const rows = result.rows;
         const mapped = rows.map(issue => {
             const totalVotes = (issue.yes_count || 0) + (issue.no_count || 0) + (issue.maybe_count || 0);
             let yesPercent = 0, noPercent = 0;
@@ -1030,11 +902,12 @@ app.get('/api/admin/issues', isAuthenticated, isAdmin, (req, res) => {
         GROUP BY
             issues.id, users.username;
     `;
-    db.all(sql, [], (err, issues) => {
+    pool.query(sql, [], (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'Database error' });
         }
+        const issues = result.rows;
         const mapped = issues.map(issue => {
             const totalVotes = (issue.yes_count || 0) + (issue.no_count || 0);
             let yes_percent = 0, no_percent = 0;
@@ -1052,49 +925,49 @@ app.get('/api/admin/issues', isAuthenticated, isAdmin, (req, res) => {
     });
 });
 
-// スタンスとコメントを投稿
+// スタンスとコメントを投稿 (トランザクション版)
 router.post('/api/stances', async (req, res) => {
     const { issue_id, stance, comment } = req.body;
-    const user_id = req.session.user_id; // ログインユーザーのID
-
+    const user_id = req.session.user_id;
     if (!issue_id || !stance || !user_id) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
-
+    const client = await pool.connect();
     try {
-        // トランザクションの開始
-        const dbTransaction = await db.transaction();
-
-        // コメントが提供された場合、commentsテーブルに挿入
+        await client.query('BEGIN');
         if (comment) {
-            await dbTransaction('comments').insert({
-                issue_id,
-                user_id,
-                comment,
-                created_at: new Date()
-            });
+            await client.query(
+                `INSERT INTO comments (issue_id, user_id, comment, created_at)
+                 VALUES ($1, $2, $3, CURRENT_TIMESTAMP)`,
+                [issue_id, user_id, comment]
+            );
         }
-
-        // スタンスカウントを更新 (YES, NO, 様子見)
         if (['YES', 'NO', '様子見'].includes(stance)) {
-            const column = stance.toLowerCase() + '_count';
-            await dbTransaction('issues')
-                .increment(column, 1)
-                .where({ id: issue_id });
+            let updateQuery = '';
+            if (stance === 'YES') {
+                updateQuery = 'UPDATE issues SET yes_count = yes_count + 1 WHERE id = $1';
+            } else if (stance === 'NO') {
+                updateQuery = 'UPDATE issues SET no_count = no_count + 1 WHERE id = $1';
+            } else if (stance === '様子見') {
+                // 適切なカウント項目があれば更新
+                updateQuery = 'UPDATE issues SET no_count = no_count + 1 WHERE id = $1';
+            }
+            if (updateQuery) {
+                await client.query(updateQuery, [issue_id]);
+            }
         }
-
-        // コミット
-        await dbTransaction.commit();
-
+        await client.query('COMMIT');
         res.json({ message: 'Stance and comment added successfully' });
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error('Error posting stance:', err);
         res.status(500).json({ error: 'Failed to post stance' });
+    } finally {
+        client.release();
     }
 });
 
 module.exports = router;
-
 
 // =========================
 // カテゴリ管理 (管理者向け)
@@ -1104,27 +977,27 @@ app.post('/api/categories', isAuthenticated, isAdmin, (req, res) => {
     if (!name || !name.trim()) {
         return res.status(400).json({ error: 'Category name is required' });
     }
-    const sql = `INSERT INTO categories (name) VALUES (?)`;
-    db.run(sql, [name.trim()], function (err) {
+    const sql = `INSERT INTO categories (name) VALUES ($1) ON CONFLICT (name) DO NOTHING RETURNING id`;
+    pool.query(sql, [name.trim()], (err, result) => {
         if (err) {
-            if (err.code === 'SQLITE_CONSTRAINT') {
-                return res.status(400).json({ error: 'Category already exists' });
-            }
             console.error('Database insert error:', err);
             return res.status(500).json({ error: 'Failed to add category' });
         }
-        res.status(201).json({ id: this.lastID, message: 'Category added successfully' });
+        if (result.rowCount === 0) {
+            return res.status(400).json({ error: 'Category already exists' });
+        }
+        res.status(201).json({ id: result.rows[0].id, message: 'Category added successfully' });
     });
 });
 
 app.get('/api/categories', (req, res) => {
     const sql = `SELECT id, name FROM categories ORDER BY name ASC`;
-    db.all(sql, [], (err, rows) => {
+    pool.query(sql, [], (err, result) => {
         if (err) {
             console.error('Database fetch error:', err);
             return res.status(500).json({ error: 'Failed to fetch categories' });
         }
-        res.json(rows);
+        res.json(result.rows);
     });
 });
 
@@ -1134,13 +1007,13 @@ app.put('/api/categories/:id', isAuthenticated, isAdmin, (req, res) => {
     if (!name || name.trim() === '') {
         return res.status(400).json({ error: 'Category name is required' });
     }
-    const sql = `UPDATE categories SET name = ? WHERE id = ?`;
-    db.run(sql, [name.trim(), categoryId], function (err) {
+    const sql = `UPDATE categories SET name = $1 WHERE id = $2`;
+    pool.query(sql, [name.trim(), categoryId], (err, result) => {
         if (err) {
             console.error('Database update error:', err);
             return res.status(500).json({ error: 'Failed to update category' });
         }
-        if (this.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Category not found' });
         }
         res.json({ message: 'Category updated successfully' });
@@ -1149,13 +1022,13 @@ app.put('/api/categories/:id', isAuthenticated, isAdmin, (req, res) => {
 
 app.delete('/api/categories/:id', isAuthenticated, isAdmin, (req, res) => {
     const categoryId = req.params.id;
-    const sql = `DELETE FROM categories WHERE id = ?`;
-    db.run(sql, [categoryId], function (err) {
+    const sql = `DELETE FROM categories WHERE id = $1`;
+    pool.query(sql, [categoryId], (err, result) => {
         if (err) {
             console.error('Database delete error:', err);
             return res.status(500).json({ error: 'Failed to delete category' });
         }
-        if (this.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Category not found' });
         }
         res.json({ message: 'Category deleted successfully' });

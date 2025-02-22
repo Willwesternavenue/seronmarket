@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
     // イシュー作成フォームの送信を処理
+    // イシュー作成フォームの送信を処理
     const createIssueForm = document.getElementById('create-issue-form');
     if (createIssueForm) {
         createIssueForm.addEventListener('submit', (event) => {
@@ -23,16 +24,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const headline = document.getElementById('headline').value.trim();
             const description = document.getElementById('description').value.trim();
-            const tag = document.getElementById('tag').value;
+            // 修正: "tag" -> "category_id"
+            const categoryId = document.getElementById('tag').value;
             const isFeatured = document.getElementById('isFeatured').checked;
-
-            if (!headline || !description || !tag) {
+            
+            if (!headline || !description || !categoryId) {
                 alert('すべてのフィールドを入力してください。');
                 return;
             }
-
-            const issueData = { headline, description, tag, isFeatured };
-
+            
+            // 修正: フィールド名を category_id と is_featured に変更
+            const issueData = { 
+                headline, 
+                description, 
+                category_id: categoryId, 
+                is_featured: isFeatured 
+            };
+            
             fetch('/api/issues', {
                 method: 'POST',
                 headers: {
@@ -160,17 +168,18 @@ function handleActionButtonClick(action, issueId, button) {
 
     switch(action) {
         case 'like':
-            endpoint = `/api/issues/${issueId}/like`;
+            // 修正: 'like' も favorites エンドポイントを使用し、常に "add" を送信
+            endpoint = `/api/issues/${issueId}/favorite`;
+            body = { action: 'add' };
             break;
         case 'favorite':
-            // トグル機能を実装する場合は、現在の状態を確認して 'add' または 'remove' を設定
+            // トグル機能の場合： 現在の数を確認して add/remove を決定
             const currentFavorites = parseInt(button.textContent.match(/\((\d+)\)/)[1], 10);
             const actionType = currentFavorites > 0 ? 'remove' : 'add';
             endpoint = `/api/issues/${issueId}/favorite`;
             body = { action: actionType };
             break;
         case 'comment':
-            // コメントを追加するために、コメント内容を取得するプロンプトを表示します。
             const userComment = prompt('コメントを入力してください:');
             if (!userComment || userComment.trim() === '') {
                 alert('コメントは空にできません。');
@@ -180,13 +189,11 @@ function handleActionButtonClick(action, issueId, button) {
             body = { comment: userComment.trim() };
             break;
         case 'stance':
-            // スタンスを選択するプロンプトを表示します。
             const userStance = prompt('スタンスを選択してください (YES, NO, 様子見):');
             if (!['YES', 'NO', '様子見'].includes(userStance)) {
                 alert('有効なスタンスを選択してください。');
                 return;
             }
-            // コメントが必要な場合は追加で取得します。
             const stanceComment = prompt('スタンスに関するコメントを入力してください (任意):');
             endpoint = `/api/stances`;
             body = { issue_id: issueId, stance: userStance, comment: stanceComment ? stanceComment.trim() : null };
@@ -197,16 +204,19 @@ function handleActionButtonClick(action, issueId, button) {
     }
 
     fetch(endpoint, {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        method,
+        headers: { 'Content-Type': 'application/json' },
         body: Object.keys(body).length > 0 ? JSON.stringify(body) : null
     })
     .then(handleFetchResponse)
     .then(data => {
         alert(`${getActionName(action)}しました！`);
-        updateButtonCount(button, data[`${action}s`] || 0); // 例: likes, favorites, comments, stances
+        // 修正: for both 'like' and 'favorite', use data.favorites
+        if (action === 'like' || action === 'favorite') {
+            updateButtonCount(button, data.favorites || 0);
+        } else {
+            updateButtonCount(button, data[`${action}s`] || 0);
+        }
     })
     .catch(err => {
         console.error(`Error performing ${action} on issue ${issueId}:`, err);

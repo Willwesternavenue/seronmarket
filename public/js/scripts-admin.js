@@ -1,5 +1,3 @@
-// scripts-admin.js
-
 /**
  * 共通のログアウト関数
  */
@@ -148,7 +146,8 @@ function submitStance() {
 function createIssue() {
     const headline = document.getElementById('headline').value.trim();
     const description = document.getElementById('description').value.trim();
-    const tag = document.getElementById('tag').value;
+    // 修正: タグではなくカテゴリIDとして取得
+    const categoryId = document.getElementById('tag').value;
     const isFeaturedCheckbox = document.getElementById('isFeatured');
     const isFeatured = isFeaturedCheckbox ? isFeaturedCheckbox.checked : false;
     const errorDiv = document.getElementById('issue-error');
@@ -158,7 +157,7 @@ function createIssue() {
     errorDiv.textContent = '';
     successDiv.textContent = '';
 
-    if (!headline || !description || !tag) {
+    if (!headline || !description || !categoryId) {
         errorDiv.textContent = 'すべてのフィールドを入力してください。';
         return;
     }
@@ -166,7 +165,8 @@ function createIssue() {
     fetch('/api/issues', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ headline, description, tag, is_featured: isFeatured })
+        // 修正: tag -> category_id
+        body: JSON.stringify({ headline, description, category_id: categoryId, is_featured: isFeatured })
     })
         .then(handleFetchResponse)
         .then(data => {
@@ -186,13 +186,16 @@ function createIssue() {
  * @param {number} issueId - イシューのID
  */
 function likeIssue(issueId) {
-    fetch(`/api/issues/${issueId}/like`, {
+    // 修正: エンドポイントを /api/issues/{id}/favorite に変更し、アクションを指定
+    fetch(`/api/issues/${issueId}/favorite`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add' })
     })
         .then(handleFetchResponse)
         .then(data => {
             alert('いいねしました！');
-            updateLikeCount(issueId, data.likes);
+            updateLikeCount(issueId, data.favorites);
         })
         .catch(err => {
             console.error('Error liking issue:', err);
@@ -237,7 +240,7 @@ function createIssueCard(issue) {
         <div class="${cardClass}">
             <h4>${sanitizeHTML(issue.headline)}</h4>
             <p>${sanitizeHTML(issue.description)}</p>
-            <p>カテゴリ: ${sanitizeHTML(issue.tag)}</p>
+            <p>カテゴリ: ${sanitizeHTML(issue.category_name)}</p>
             <div class="vote-bar-container">
                 <div class="vote-bar vote-bar-yes" style="width: ${sanitizePercentage(issue.yes_percent)}%;"></div>
                 <div class="vote-bar vote-bar-no" style="width: ${sanitizePercentage(issue.no_percent)}%;"></div>
@@ -290,8 +293,8 @@ function displayIssues(url, containerId, cardCreator) {
  */
 function refreshIssues() {
     // フィーチャーイシューとその他のイシューをそれぞれ再取得
-    displayIssues('/api/featured_issues', 'featured-issues', createIssueCard); // フィーチャーイシュー
-    displayIssues('/api/issues_with_votes', 'existingIssues', createIssueCard); // その他のイシュー
+    displayIssues('/api/featured_issues', 'featured-issues', createIssueCard);
+    displayIssues('/api/issues_with_votes', 'existingIssues', createIssueCard);
 }
 
 /**
@@ -304,7 +307,7 @@ function initializeTagDropdown() {
         return;
     }
 
-    // 既存のオプションをクリア（必要に応じて）
+    // 既存のオプションをクリア
     tagDropdown.innerHTML = '<option value="">選択してください</option>';
 
     fetch('/api/categories')
@@ -318,7 +321,8 @@ function initializeTagDropdown() {
 
             categories.forEach(category => {
                 const option = document.createElement('option');
-                option.value = category.name; // バックエンドから送信されるnameを使用
+                // 修正: option.value をカテゴリID に変更
+                option.value = category.id;
                 option.textContent = category.name;
                 tagDropdown.appendChild(option);
             });
@@ -342,7 +346,7 @@ function initializeIssueDropdown() {
     // 既存のオプションをクリア
     issueDropdown.innerHTML = '<option value="">選択してください</option>';
 
-    fetch('/api/admin/issues') // 管理者用のエンドポイントを使用
+    fetch('/api/admin/issues')
         .then(handleFetchResponse)
         .then(issues => {
             if (!Array.isArray(issues) || issues.length === 0) {

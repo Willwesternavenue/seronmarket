@@ -130,18 +130,16 @@ function submitStance() {
 /** イシュー作成処理 */
 function createIssue() {
   const headlineInput = document.getElementById('headline');
-  // 1) 「カテゴリ選択」用の <select id="tag"> を取得
+  // 「カテゴリ選択」用の <select id="tag"> を取得
   const tagSelect = document.getElementById('tag'); 
   const isFeaturedCheckbox = document.getElementById('isFeatured');
 
-  // 2) headlineInput と tagSelect の両方があるかチェック
   if (!headlineInput || !tagSelect) {
     console.error('Required input fields are missing');
     alert('必須の入力フィールドが見つかりませんでした。');
     return;
   }
 
-  // 3) 値の取得
   const headline = headlineInput.value.trim();
   const categoryValue = tagSelect.value.trim();
   if (!categoryValue) {
@@ -149,12 +147,10 @@ function createIssue() {
     return;
   }
 
-  // 4) categoryValueを整数に変換
   const categoryId = parseInt(categoryValue, 10);
   const isFeatured = isFeaturedCheckbox ? isFeaturedCheckbox.checked : false;
   const description = 'このイシューは自動生成された概要を持ちます。';
 
-  // 5) バリデーション
   const errorDiv = document.getElementById('issue-error');
   const successDiv = document.getElementById('issue-success');
   if (errorDiv) errorDiv.textContent = '';
@@ -167,7 +163,6 @@ function createIssue() {
     return;
   }
 
-  // 6) APIにリクエスト
   fetch('/api/issues', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -196,11 +191,17 @@ function createIssue() {
 
 /** 「いいね」ボタンクリック */
 function likeIssue(issueId) {
-  fetch(`/api/issues/${issueId}/like`, { method: 'POST', credentials: 'same-origin' })
+  // 修正: エンドポイントを /api/issues/{id}/favorite に変更し、JSONボディで action を指定
+  fetch(`/api/issues/${issueId}/favorite`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'add' }),
+    credentials: 'same-origin'
+  })
     .then(handleFetchResponse)
     .then(data => {
       alert('いいねしました！');
-      updateLikeCount(issueId, data.likes);
+      updateLikeCount(issueId, data.favorites);
     })
     .catch(err => {
       console.error('Error liking issue:', err);
@@ -304,13 +305,13 @@ function initializeIssueDropdown() {
     })
     .catch(err => {
       console.error('Error fetching issues for dropdown:', err);
-      issueDropdown.innerHTML = '<option disabled>イシューの取得に失敗</option>';
+      issueDropdown.innerHTML = '<option disabled>イシューの取得に失敗しました</option>';
     });
 }
 
 /** DOMContentLoaded 後にまとめて実行 */
 document.addEventListener('DOMContentLoaded', () => {
-  // カテゴリドロップダウンを初期化
+  // カテゴリドロップダウンを初期化（外部からインポートした関数を利用）
   initializeCategoryDropdown();
   // ユーザー情報・フォームなどの初期化
   fetchUserInfo();

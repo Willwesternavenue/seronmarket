@@ -1,0 +1,4 @@
+id,username,password,is_admin
+1,admin,$2b$10$fiXeK0MInxfmwCU55Ab79eGUGlJJZjMoEiE4Jx4oES0cl4HQEjciK,1
+2,sample,$2b$10$jme/x0g3HxNKOyayODCBnOdYxSKi7nhF00K8PcxgdrGFQxTBWe5hG,0
+3,will,$2b$10$nmJlb6xhT79xoJcJngueX.oaqZTpf6pazQq4drigqF3HN5kdRlrTy,0

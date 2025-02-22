@@ -93,7 +93,7 @@ function createFeaturedIssueCard(issue) {
             </div>
             <div class="action-buttons">
                 <button class="like-button" data-issue-id="${issue.id}" tabindex="0" aria-label="いいね ボタン">
-                <i class="fas fa-fire icon"></i> ${issue.likes || 0}
+                    <i class="fas fa-fire icon"></i> ${issue.likes || 0}
                 </button>
                 <button class="stance-button" data-issue-id="${issue.id}" tabindex="0" aria-label="スタンス ボタン">
                     <i class="fas fa-balance-scale icon"></i> ${issue.stance_count || 0}
@@ -105,9 +105,8 @@ function createFeaturedIssueCard(issue) {
                     <i class="fas fa-star icon"></i> ${favoritesCount}
                 </button>
                 <button class="comment-button" data-issue-id="${issue.id}" tabindex="0" aria-label="コメント ボタン">
-                <i class="fas fa-bullhorn icon"></i> ${issue.comments_count || 0}
-            </button>
-
+                    <i class="fas fa-bullhorn icon"></i> ${issue.comments_count || 0}
+                </button>
             </div>
         </div>
     `;
@@ -129,21 +128,10 @@ function createOtherIssueCard(issue) {
                 <h4 class="issue-title multiline-ellipsis">${sanitizeHTML(truncateText(issue.headline, 50))}</h4>
             </a>
             <!-- コメントセクション（その他イシューでは非表示）-->
-            <!-- コメントを再度表示したくなった場合は、下記を追加
-                <div class="comments-section">
-                    <p>コメントを取得中...</p>
-                </div>
-             -->
             <div class="vote-bar-container">
                 <div class="vote-bar-yes" style="width: ${yesPercent}%;"></div>
                 <div class="vote-bar-no" style="width: ${noPercent}%;"></div>
             </div>
-            <!--
-            <div class="vote-counts">
-                <span>YES ${yesPercent}%</span>
-                <span>NO ${noPercent}%</span>
-            </div>
-            -->
             <div class="action-buttons">
                 <button class="like-button" data-issue-id="${issue.id}" tabindex="0" aria-label="いいね ボタン">
                     <i class="fas fa-fire icon"></i> ${issue.likes || 0}
@@ -213,17 +201,15 @@ function displayIssues(url, containerId, cardCreator, withComments = false) {
  */
 function updateCommentsSection(cardElement, comments, isError = false) {
     const commentsSection = cardElement.querySelector('.comments-section');
-    if (!commentsSection) return; // その他イシューにはコメントセクションがない（現在）
-
+    if (!commentsSection) return; // その他イシューにはコメントセクションがない
     if (isError) {
         commentsSection.innerHTML = '<p>コメントの取得に失敗しました。</p>';
         return;
     }
-
     if (!comments || comments.length === 0) {
         commentsSection.innerHTML = '<p>（まだコメントはありません）</p>';
     } else {
-        const latestComment = comments[0]; 
+        const latestComment = comments[0];
         commentsSection.innerHTML = `
             <div class="comment">
                 <p>${sanitizeHTML(latestComment.comment)}</p>
@@ -245,7 +231,6 @@ function fetchCategories() {
             const tabsContainer = document.querySelector('.tabs');
             if (!tabsContainer) return;
 
-            // 初期状態（all）ボタン
             tabsContainer.innerHTML = '';
             const allButton = document.createElement('button');
             allButton.className = 'tab-button active';
@@ -253,7 +238,6 @@ function fetchCategories() {
             allButton.textContent = '全カテゴリ';
             tabsContainer.appendChild(allButton);
 
-            // カテゴリボタン
             categories.forEach(cat => {
                 const button = document.createElement('button');
                 button.className = `tab-button category-${cat.id}`;
@@ -267,7 +251,6 @@ function fetchCategories() {
 
 function searchIssues(query) {
     if (!query) {
-        // 全件再表示
         displayIssues(API_ENDPOINTS.FEATURED_ISSUES, 'featured-issues', createFeaturedIssueCard, true);
         displayIssues(API_ENDPOINTS.ISSUES_WITH_VOTES, 'existingIssues', createOtherIssueCard, false);
         return;
@@ -275,13 +258,9 @@ function searchIssues(query) {
     fetch(`${API_ENDPOINTS.SEARCH_ISSUES}?query=${encodeURIComponent(query)}`)
         .then(handleFetchResponse)
         .then(issues => {
-            // フィーチャー・その他に分割
             const featured = issues.filter(i => i.is_featured === 1);
             const others   = issues.filter(i => i.is_featured === 0);
-
-            // フィーチャーのみ withComments = true
             renderIssues('featured-issues', featured, createFeaturedIssueCard, true);
-            // その他イシュー withComments = false
             renderIssues('existingIssues', others, createOtherIssueCard, false);
         })
         .catch(err => console.error('Error searching issues:', err));
@@ -302,8 +281,6 @@ function renderIssues(containerId, issues, cardCreator, withComments = false) {
         const cardElement = document.createElement('div');
         cardElement.innerHTML = cardHTML;
         container.appendChild(cardElement);
-
-        // フィーチャーだけコメント取得
         if (withComments) {
             fetch(`/api/issues/${issue.id}/comments`)
                 .then(handleFetchResponse)
@@ -340,13 +317,10 @@ function handleActionButtonClickEvent(e) {
 function handleActionButtonKeyPress(e) {
     handleActionButtonEvent(e, true);
 }
-
 function handleActionButtonEvent(event, isKeyPress = false) {
     const button = event.target.closest('.action-buttons button');
     if (!button) return;
-
     if (isKeyPress && !['Enter', ' '].includes(event.key)) return;
-
     const action = getActionFromButton(button);
     const issueId = button.dataset.issueId;
     if (action && issueId) handleActionButtonClick(action, issueId, button);
@@ -362,7 +336,13 @@ function handleActionButtonClick(action, issueId, button) {
 
     switch(action) {
         case 'like':
-            endpoint = `/api/issues/${issueId}/like`;
+            // 修正: エンドポイントとボディを favorites エンドポイントに合わせる
+            endpoint = `/api/issues/${issueId}/favorite`;
+            body = { action: 'add' };
+            break;
+        case 'favorite':
+            endpoint = `/api/issues/${issueId}/favorite`;
+            body = { action: 'add' };
             break;
         case 'stance':
             const userStance = prompt('スタンスを選択 (YES, NO, 様子見):');
@@ -389,6 +369,8 @@ function handleActionButtonClick(action, issueId, button) {
             alert(`${getActionName(action)}しました！`);
             if (action === 'like') {
                 updateButtonCount(button, data.likes || 0);
+            } else if (action === 'favorite') {
+                updateButtonCount(button, data.favorites || 0);
             } else if (action === 'stance') {
                 updateButtonCount(button, data.stance_count || 0);
             }
@@ -416,11 +398,13 @@ function getActionName(action) {
  * ボタンのカウントを更新
  */
 function updateButtonCount(button, newCount) {
-    const countSpan = button.querySelector('.count');
-    if (countSpan) {
-        countSpan.textContent = `(${newCount})`;
+    // ここは、ボタン内にカウントを示す span があれば更新、
+    // ない場合はボタンのテキストを直接書き換える例
+    if (button.querySelector('.count')) {
+        button.querySelector('.count').textContent = `(${newCount})`;
     } else {
-        console.warn('Count span not found in button:', button);
+        // アイコン部分を維持しつつテキスト更新（シンプルな例）
+        button.innerHTML = button.innerHTML.replace(/\d+/, newCount);
     }
 }
 
@@ -438,8 +422,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchCategories();
         tabsContainer.addEventListener('click', (e) => {
             if (!e.target.classList.contains('tab-button')) return;
-            
-            // アクティブ状態切り替え
             [...tabsContainer.querySelectorAll('.tab-button')].forEach(btn =>
                 btn.classList.toggle('active', btn === e.target)
             );
@@ -462,7 +444,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const query = searchInput.value.trim();
             if (!query) {
-                // 再取得
                 displayIssues(API_ENDPOINTS.FEATURED_ISSUES, 'featured-issues', createFeaturedIssueCard, true);
                 displayIssues(API_ENDPOINTS.ISSUES_WITH_VOTES, 'existingIssues', createOtherIssueCard, false);
             } else {
